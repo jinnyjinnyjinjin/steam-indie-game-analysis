@@ -1,7 +1,10 @@
 [project]
 name = "game-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "steam indie game analysis project"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "psycopg2-binary",
+    "python-dotenv",
+]
