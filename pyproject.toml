@@ -5,6 +5,8 @@ description = "steam indie game analysis project"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "pandas>=3.0.2",
+    "plotly>=6.7.0",
     "psycopg2-binary",
     "python-dotenv",
 ]
