@@ -16,3 +16,8 @@ wheels/
 data/
 src/notebooks/JH/steam_indie_merged_data.csv
 src/notebooks/JH/merged_steam_reviews.csv
+src/notebooks/JH/steam_indie_list.csv
+src/notebooks/JH/review_histogram_copy.csv
+.gitignore
+src/notebooks/JH/steam_indie_reviews.csv
+src/notebooks/JH/steam_stratified_sample.csv
