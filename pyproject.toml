@@ -5,6 +5,7 @@ description = "steam indie game analysis project"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "deep-translator>=1.11.4",
     "matplotlib>=3.10.8",
     "nbformat>=5.10.4",
     "networkx>=3.6.1",
