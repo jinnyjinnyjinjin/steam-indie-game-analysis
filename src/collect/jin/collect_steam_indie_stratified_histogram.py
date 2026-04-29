@@ -26,11 +26,11 @@ if not SAMPLE_PATH.is_absolute():
     SAMPLE_PATH = _ROOT / SAMPLE_PATH
 
 OUTPUT_PATH = _ROOT / "data/processed/steam_indie_review_histogram.csv"
-LOG_PATH    = _ROOT / "data/raw/steam_indie_collection_log_histogram.json"
+LOG_PATH    = _ROOT / "data/logs/steam_indie_collection_log_histogram.json"
 
 SLEEP_SEC        = 1.2
 BATCH_SIZE       = 300  # 행 단위
-DONE_APPIDS_PATH = _ROOT / "data/raw/steam_indie_histogram_done.json"
+DONE_APPIDS_PATH = _ROOT / "data/logs/steam_indie_histogram_done.json"
 
 
 def load_done_appids():
