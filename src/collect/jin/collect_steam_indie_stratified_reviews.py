@@ -179,7 +179,7 @@ print(f"수집 대상: {len(targets)}개 게임")
 
 
 # ── Steam Review API 호출 함수 ───────────────────────────────
-def fetch_reviews_page(appid, cursor="*", is_f2p=False):
+def fetch_reviews_page(appid, cursor="*"):
     url = f"https://store.steampowered.com/appreviews/{appid}"
     params = {
         "json":                    1,
@@ -187,7 +187,7 @@ def fetch_reviews_page(appid, cursor="*", is_f2p=False):
         "language":                "all",
         "num_per_page":            NUM_PER_PAGE,
         "cursor":                  cursor,
-        "purchase_type":           "all" if is_f2p else "steam",
+        "purchase_type":           "steam",
         "filter_offtopic_activity": 1,
     }
     try:
@@ -200,7 +200,7 @@ def fetch_reviews_page(appid, cursor="*", is_f2p=False):
 
 
 # ── 게임 1개 수집 (리뷰 레코드 + query_summary 반환) ────────
-def collect_game(appid, release_date, is_f2p=False, early_days=EARLY_DAYS, max_pages=MAX_PAGES):
+def collect_game(appid, release_date, early_days=EARLY_DAYS, max_pages=MAX_PAGES):
     release_ts = int(release_date.timestamp())
     cutoff_ts  = int((release_date + timedelta(days=early_days)).timestamp())
 
@@ -210,7 +210,7 @@ def collect_game(appid, release_date, is_f2p=False, early_days=EARLY_DAYS, max_p
     stopped_reason = "max_pages"
 
     for page in range(max_pages):
-        data = fetch_reviews_page(appid, cursor, is_f2p=is_f2p)
+        data = fetch_reviews_page(appid, cursor)
         time.sleep(SLEEP_SEC)
 
         if not data or data.get("success") != 1:
@@ -317,17 +317,14 @@ for i, row in targets.iterrows():
         print(f"[{i+1}/{len(targets)}] {name} — 이미 수집됨, 스킵")
         continue
 
-    is_f2p    = bool(row['is_f2p'])
-    f2p_label = " [F2P]" if is_f2p else ""
-    
     # 리뷰 수에 따른 동적 페이지 제한 (최소 MAX_PAGES, 최대는 리뷰 수의 120% 수준)
     total_reviews = int(row['total_reviews']) if not pd.isna(row['total_reviews']) else 0
     dynamic_max_pages = max(MAX_PAGES, int(total_reviews / 100 * 1.2) + 50)
-    
-    print(f"[{i+1}/{len(targets)}] {name}{f2p_label} (appid={appid}, 출시={release_date.date()}, 총리뷰={total_reviews:,}) 수집 중...")
+
+    print(f"[{i+1}/{len(targets)}] {name} (appid={appid}, 출시={release_date.date()}, 총리뷰={total_reviews:,}) 수집 중...")
     print(f"  * 동적 페이지 제한: {dynamic_max_pages} 페이지")
 
-    reviews, query_summary, stopped_reason, pages = collect_game(appid, release_date, is_f2p=is_f2p, max_pages=dynamic_max_pages)
+    reviews, query_summary, stopped_reason, pages = collect_game(appid, release_date, max_pages=dynamic_max_pages)
 
     append_checkpoint(reviews)
     if stopped_reason == "api_error":
