@@ -10,9 +10,17 @@ sys.path.insert(0, str(Path(__file__).parents[3] / "src"))
 from utils.db import get_connection
 
 # ── 설정 ────────────────────────────────────────────────────
-_ROOT            = Path(__file__).parents[3]
-SAMPLE_PATH      = _ROOT / "data/processed/steam_stratified_sample.csv"
-OUTPUT_PATH      = _ROOT / "data/processed/steam_indie_reviews_v2.csv"
+_ROOT = Path(__file__).parents[3]
+
+if len(sys.argv) < 2:
+    print("usage: python collect_steam_indie_stratified_reviews.py <sample_csv_path>")
+    sys.exit(1)
+
+SAMPLE_PATH = Path(sys.argv[1])
+if not SAMPLE_PATH.is_absolute():
+    SAMPLE_PATH = _ROOT / SAMPLE_PATH
+
+OUTPUT_PATH      = _ROOT / "data/processed/steam_indie_reviews.csv"
 CHECKPOINT_PATH   = _ROOT / "data/raw/steam_indie_reviews_checkpoint.jsonl"
 DONE_APPIDS_PATH  = _ROOT / "data/raw/steam_indie_reviews_done.json"
 API_ERROR_PATH    = _ROOT / "data/raw/steam_indie_reviews_api_errors.json"
@@ -21,7 +29,6 @@ EARLY_DAYS    = 90
 MAX_PAGES     = 500
 NUM_PER_PAGE  = 100
 SLEEP_SEC     = 1.2
-TARGET_STRATA = ['large_high', 'mid_high', 'small_high']
 BATCH_SIZE    = 500  # 리뷰 건수 기준
 
 # ── 체크포인트 ───────────────────────────────────────────────
@@ -101,6 +108,17 @@ def ensure_table(conn):
                 author_last_played             BIGINT
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS steam_indie_review_summary (
+                appid                BIGINT PRIMARY KEY,
+                review_score         INTEGER,
+                review_score_desc    TEXT,
+                total_positive       INTEGER,
+                total_negative       INTEGER,
+                total_reviews        INTEGER,
+                collected_at         BIGINT
+            )
+        """)
     conn.commit()
 
 
@@ -132,10 +150,31 @@ def flush_to_db(conn, batch):
     print(f"  [DB] {len(batch)}건 적재 완료")
 
 
+def flush_summary_to_db(conn, summary):
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO steam_indie_review_summary (
+                appid, review_score, review_score_desc,
+                total_positive, total_negative, total_reviews, collected_at
+            ) VALUES (
+                %(appid)s, %(review_score)s, %(review_score_desc)s,
+                %(total_positive)s, %(total_negative)s, %(total_reviews)s, %(collected_at)s
+            )
+            ON CONFLICT (appid) DO UPDATE SET
+                review_score      = EXCLUDED.review_score,
+                review_score_desc = EXCLUDED.review_score_desc,
+                total_positive    = EXCLUDED.total_positive,
+                total_negative    = EXCLUDED.total_negative,
+                total_reviews     = EXCLUDED.total_reviews,
+                collected_at      = EXCLUDED.collected_at
+        """, summary)
+    conn.commit()
+
+
 # ── 데이터 로드 ──────────────────────────────────────────────
 df = pd.read_csv(SAMPLE_PATH)
 df['release_date'] = pd.to_datetime(df['release_date'], errors='coerce')
-targets = df[df['stratum'].isin(TARGET_STRATA)].reset_index(drop=True)
+targets = df.reset_index(drop=True)
 print(f"수집 대상: {len(targets)}개 게임")
 
 
@@ -143,12 +182,13 @@ print(f"수집 대상: {len(targets)}개 게임")
 def fetch_reviews_page(appid, cursor="*", is_f2p=False):
     url = f"https://store.steampowered.com/appreviews/{appid}"
     params = {
-        "json":          1,
-        "filter":        "recent",
-        "language":      "all",
-        "num_per_page":  NUM_PER_PAGE,
-        "cursor":        cursor,
-        "purchase_type": "all" if is_f2p else "steam",
+        "json":                    1,
+        "filter":                  "recent",
+        "language":                "all",
+        "num_per_page":            NUM_PER_PAGE,
+        "cursor":                  cursor,
+        "purchase_type":           "all" if is_f2p else "steam",
+        "filter_offtopic_activity": 1,
     }
     try:
         resp = requests.get(url, params=params, timeout=15)
@@ -159,12 +199,13 @@ def fetch_reviews_page(appid, cursor="*", is_f2p=False):
         return None
 
 
-# ── 게임 1개 수집 (개별 리뷰 레코드 반환) ───────────────────
+# ── 게임 1개 수집 (리뷰 레코드 + query_summary 반환) ────────
 def collect_game(appid, release_date, is_f2p=False, early_days=EARLY_DAYS, max_pages=MAX_PAGES):
     release_ts = int(release_date.timestamp())
     cutoff_ts  = int((release_date + timedelta(days=early_days)).timestamp())
 
     collected      = []
+    query_summary  = None
     cursor         = "*"
     stopped_reason = "max_pages"
 
@@ -175,6 +216,19 @@ def collect_game(appid, release_date, is_f2p=False, early_days=EARLY_DAYS, max_p
         if not data or data.get("success") != 1:
             stopped_reason = "api_error"
             break
+
+        # 첫 페이지에서 query_summary 저장
+        if query_summary is None:
+            qs = data.get("query_summary", {})
+            query_summary = {
+                "appid":             appid,
+                "review_score":      qs.get("review_score"),
+                "review_score_desc": qs.get("review_score_desc"),
+                "total_positive":    qs.get("total_positive"),
+                "total_negative":    qs.get("total_negative"),
+                "total_reviews":     qs.get("total_reviews"),
+                "collected_at":      int(time.time()),
+            }
 
         reviews = data.get("reviews", [])
         if not reviews:
@@ -227,7 +281,7 @@ def collect_game(appid, release_date, is_f2p=False, early_days=EARLY_DAYS, max_p
             break
         cursor = next_cursor
 
-    return collected, stopped_reason, page + 1
+    return collected, query_summary, stopped_reason, page + 1
 
 
 # ── 메인 수집 루프 ────────────────────────────────────────────
@@ -252,7 +306,7 @@ batch       = []
 
 for i, row in targets.iterrows():
     appid        = row['appid']
-    name         = row['name_store']
+    name         = row['name']
     release_date = row['release_date']
 
     if pd.isna(release_date):
@@ -273,13 +327,15 @@ for i, row in targets.iterrows():
     print(f"[{i+1}/{len(targets)}] {name}{f2p_label} (appid={appid}, 출시={release_date.date()}, 총리뷰={total_reviews:,}) 수집 중...")
     print(f"  * 동적 페이지 제한: {dynamic_max_pages} 페이지")
 
-    reviews, stopped_reason, pages = collect_game(appid, release_date, is_f2p=is_f2p, max_pages=dynamic_max_pages)
+    reviews, query_summary, stopped_reason, pages = collect_game(appid, release_date, is_f2p=is_f2p, max_pages=dynamic_max_pages)
 
     append_checkpoint(reviews)
     if stopped_reason == "api_error":
         save_api_error_appid(appid)
     else:
         save_done_appid(appid)
+    if query_summary:
+        flush_summary_to_db(conn, query_summary)
     all_reviews.extend(reviews)
     batch.extend(reviews)
 
