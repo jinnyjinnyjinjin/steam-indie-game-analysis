@@ -3,7 +3,6 @@ import requests
 import time
 import json
 import sys
-from datetime import timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[3] / "src"))
@@ -25,8 +24,7 @@ CHECKPOINT_PATH   = _ROOT / "data/logs/steam_indie_reviews_checkpoint.jsonl"
 DONE_APPIDS_PATH  = _ROOT / "data/logs/steam_indie_reviews_done.json"
 API_ERROR_PATH    = _ROOT / "data/logs/steam_indie_reviews_api_errors.json"
 
-EARLY_DAYS    = 90
-MAX_PAGES     = 500
+MAX_PAGES     = 1000
 NUM_PER_PAGE  = 100
 SLEEP_SEC     = 1.2
 BATCH_SIZE    = 500  # 리뷰 건수 기준
@@ -92,19 +90,19 @@ def ensure_table(conn):
                 timestamp_created              BIGINT,
                 timestamp_updated              BIGINT,
                 voted_up                       BOOLEAN,
-                votes_up                       INTEGER,
-                votes_funny                    INTEGER,
+                votes_up                       BIGINT,
+                votes_funny                    BIGINT,
                 weighted_vote_score            FLOAT,
-                comment_count                  INTEGER,
+                comment_count                  BIGINT,
                 steam_purchase                 BOOLEAN,
                 received_for_free              BOOLEAN,
                 written_during_early_access    BOOLEAN,
                 author_steamid                 TEXT,
-                author_num_games_owned         INTEGER,
-                author_num_reviews             INTEGER,
-                author_playtime_forever        INTEGER,
-                author_playtime_last_two_weeks INTEGER,
-                author_playtime_at_review      INTEGER,
+                author_num_games_owned         BIGINT,
+                author_num_reviews             BIGINT,
+                author_playtime_forever        BIGINT,
+                author_playtime_last_two_weeks BIGINT,
+                author_playtime_at_review      BIGINT,
                 author_last_played             BIGINT
             )
         """)
@@ -200,10 +198,7 @@ def fetch_reviews_page(appid, cursor="*"):
 
 
 # ── 게임 1개 수집 (리뷰 레코드 + query_summary 반환) ────────
-def collect_game(appid, release_date, early_days=EARLY_DAYS, max_pages=MAX_PAGES):
-    release_ts = int(release_date.timestamp())
-    cutoff_ts  = int((release_date + timedelta(days=early_days)).timestamp())
-
+def collect_game(appid, max_pages=MAX_PAGES):
     collected      = []
     query_summary  = None
     cursor         = "*"
@@ -235,17 +230,8 @@ def collect_game(appid, release_date, early_days=EARLY_DAYS, max_pages=MAX_PAGES
             stopped_reason = "no_more_reviews"
             break
 
-        passed_window = False
         for review in reviews:
-            ts = review.get("timestamp_created", 0)
-
-            if ts > cutoff_ts:
-                continue
-
-            if ts < release_ts:
-                passed_window = True
-                break
-
+            ts     = review.get("timestamp_created", 0)
             author = review.get("author", {})
             collected.append({
                 "recommendationid":              review.get("recommendationid"),
@@ -270,10 +256,6 @@ def collect_game(appid, release_date, early_days=EARLY_DAYS, max_pages=MAX_PAGES
                 "author_playtime_at_review":     author.get("playtime_at_review"),
                 "author_last_played":            author.get("last_played"),
             })
-
-        if passed_window:
-            stopped_reason = "passed_window"
-            break
 
         next_cursor = data.get("cursor", "")
         if not next_cursor or next_cursor == cursor:
@@ -324,7 +306,7 @@ for i, row in targets.iterrows():
     print(f"[{i+1}/{len(targets)}] {name} (appid={appid}, 출시={release_date.date()}, 총리뷰={total_reviews:,}) 수집 중...")
     print(f"  * 동적 페이지 제한: {dynamic_max_pages} 페이지")
 
-    reviews, query_summary, stopped_reason, pages = collect_game(appid, release_date, max_pages=dynamic_max_pages)
+    reviews, query_summary, stopped_reason, pages = collect_game(appid, max_pages=dynamic_max_pages)
 
     append_checkpoint(reviews)
     if stopped_reason == "api_error":
