@@ -288,10 +288,6 @@ for i, row in targets.iterrows():
     name         = row['name']
     release_date = row['release_date']
 
-    if pd.isna(release_date):
-        print(f"[{i+1}/{len(targets)}] {name} — 출시일 없음, 스킵")
-        continue
-
     if appid in done_appids:
         print(f"[{i+1}/{len(targets)}] {name} — 이미 수집됨, 스킵")
         continue
@@ -300,7 +296,8 @@ for i, row in targets.iterrows():
     total_reviews = int(row['total_reviews']) if not pd.isna(row['total_reviews']) else 0
     dynamic_max_pages = max(MAX_PAGES, int(total_reviews / 100 * 1.2) + 50)
 
-    print(f"[{i+1}/{len(targets)}] {name} (appid={appid}, 출시={release_date.date()}, 총리뷰={total_reviews:,}) 수집 중...")
+    release_str = release_date.date() if not pd.isna(release_date) else 'N/A'
+    print(f"[{i+1}/{len(targets)}] {name} (appid={appid}, 출시={release_str}, 총리뷰={total_reviews:,}) 수집 중...")
     print(f"  * 동적 페이지 제한: {dynamic_max_pages} 페이지")
 
     reviews, query_summary, stopped_reason, pages = collect_game(appid, max_pages=dynamic_max_pages)
@@ -327,8 +324,8 @@ if batch:
 
 conn.close()
 
-# 정상 완료 시 임시 파일 삭제
-for path in (CHECKPOINT_PATH, DONE_APPIDS_PATH, API_ERROR_PATH):
+# 정상 완료 시 임시 파일 삭제 (done.json은 DB 재구성 시 재개용으로 보존)
+for path in (CHECKPOINT_PATH, API_ERROR_PATH):
     if path.exists():
         path.unlink()
 print("[완료] 임시 파일 삭제")
