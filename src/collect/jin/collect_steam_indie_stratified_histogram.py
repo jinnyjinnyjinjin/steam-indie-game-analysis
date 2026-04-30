@@ -13,6 +13,21 @@ from utils.db import get_connection
 def ts_to_date(ts):
     return datetime.fromtimestamp(ts).strftime('%Y-%m-%d') if ts else None
 
+def normalize_db_date(value):
+    if pd.isna(value):
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or stripped.lower() == "nat":
+            return None
+        return stripped
+    if hasattr(value, "date"):
+        try:
+            return value.date()
+        except Exception:
+            return value
+    return value
+
 
 # ── 설정 ────────────────────────────────────────────────────
 _ROOT = Path(__file__).parents[3]
@@ -25,7 +40,7 @@ SAMPLE_PATH = Path(sys.argv[1])
 if not SAMPLE_PATH.is_absolute():
     SAMPLE_PATH = _ROOT / SAMPLE_PATH
 
-OUTPUT_PATH = _ROOT / "data/processed/steam_indie_review_histogram.csv"
+OUTPUT_PATH = _ROOT / "data/raw/steam_origin_indie_review_histogram.csv"
 LOG_PATH    = _ROOT / "data/logs/steam_indie_collection_log_histogram.json"
 
 SLEEP_SEC        = 1.2
@@ -75,6 +90,14 @@ def ensure_table(conn):
 def flush_to_db(conn, batch):
     if not batch:
         return
+    normalized_batch = []
+    for row in batch:
+        normalized_row = dict(row)
+        normalized_row["release_date"] = normalize_db_date(normalized_row.get("release_date"))
+        normalized_row["hist_start_date"] = normalize_db_date(normalized_row.get("hist_start_date"))
+        normalized_row["hist_end_date"] = normalize_db_date(normalized_row.get("hist_end_date"))
+        normalized_row["date"] = normalize_db_date(normalized_row.get("date"))
+        normalized_batch.append(normalized_row)
     with conn.cursor() as cur:
         cur.executemany("""
             INSERT INTO steam_indie_review_histogram (
@@ -87,7 +110,7 @@ def flush_to_db(conn, batch):
                 %(date)s, %(recommendations_up)s, %(recommendations_down)s, %(data_type)s
             )
             ON CONFLICT (appid, date, data_type) DO NOTHING
-        """, batch)
+        """, normalized_batch)
     conn.commit()
     print(f"  [DB] {len(batch)}행 적재 완료")
 
@@ -224,7 +247,10 @@ print(f"로그 저장 → {LOG_PATH}")
 print(f"\n총 행 수: {len(df_result):,}개")
 print(f"성공: {sum(1 for l in log if l['status'] == 'success')}개  "
       f"실패: {sum(1 for l in log if l['status'] == 'failed')}개")
-print(f"\n=== data_type 분포 ===")
-print(df_result['data_type'].value_counts())
-print(f"\n=== 층별 수집 게임 수 ===")
-print(df_result.groupby('stratum')['appid'].nunique())
+if df_result.empty:
+    print("\\n수집된 신규 데이터가 없어 분포를 출력하지 않습니다.")
+else:
+    print(f"\\n=== data_type 분포 ===")
+    print(df_result['data_type'].value_counts())
+    print(f"\\n=== 층별 수집 게임 수 ===")
+    print(df_result.groupby('stratum')['appid'].nunique())

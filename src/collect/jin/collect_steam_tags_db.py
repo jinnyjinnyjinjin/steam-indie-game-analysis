@@ -17,7 +17,7 @@ import argparse
 
 # --- 설정 ---
 # 기본 입력 파일: 층화 추출된 샘플 파일
-DEFAULT_INPUT = os.path.join(PROJECT_ROOT, "data/processed/steam_indie_games.csv")
+DEFAULT_INPUT = os.path.join(PROJECT_ROOT, "data/preprocessed/steam_indie_genre_stratified_sample.csv")
 # 수집 완료된 appid를 기록할 JSON 로그 파일
 CHECKPOINT_PATH = os.path.join(PROJECT_ROOT, "data/logs/collect_tags_checkpoint.json")
 BATCH_SIZE = 20
@@ -38,8 +38,7 @@ def init_db():
             positive INTEGER,
             negative INTEGER,
             price INTEGER,
-            tags JSONB,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            tags JSONB
         )
     """)
     conn.commit()
@@ -53,7 +52,7 @@ def load_checkpoint():
         try:
             with open(CHECKPOINT_PATH, "r", encoding="utf-8") as f:
                 return set(json.load(f))
-        except:
+        except Exception:
             return set()
     return set()
 
@@ -147,8 +146,7 @@ def main():
         positive = EXCLUDED.positive,
         negative = EXCLUDED.negative,
         price = EXCLUDED.price,
-        tags = EXCLUDED.tags,
-        updated_at = EXCLUDED.updated_at
+        tags = EXCLUDED.tags
     """
 
     try:
