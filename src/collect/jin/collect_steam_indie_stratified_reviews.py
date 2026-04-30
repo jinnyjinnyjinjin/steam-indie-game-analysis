@@ -19,7 +19,7 @@ SAMPLE_PATH = Path(sys.argv[1])
 if not SAMPLE_PATH.is_absolute():
     SAMPLE_PATH = _ROOT / SAMPLE_PATH
 
-OUTPUT_PATH      = _ROOT / "data/processed/steam_indie_reviews.csv"
+OUTPUT_PATH      = _ROOT / "data/raw/steam_origin_indie_reviews.csv"
 CHECKPOINT_PATH   = _ROOT / "data/logs/steam_indie_reviews_checkpoint.jsonl"
 DONE_APPIDS_PATH  = _ROOT / "data/logs/steam_indie_reviews_done.json"
 API_ERROR_PATH    = _ROOT / "data/logs/steam_indie_reviews_api_errors.json"
@@ -113,8 +113,7 @@ def ensure_table(conn):
                 review_score_desc    TEXT,
                 total_positive       INTEGER,
                 total_negative       INTEGER,
-                total_reviews        INTEGER,
-                collected_at         BIGINT
+                total_reviews        INTEGER
             )
         """)
     conn.commit()
@@ -153,18 +152,17 @@ def flush_summary_to_db(conn, summary):
         cur.execute("""
             INSERT INTO steam_indie_review_summary (
                 appid, review_score, review_score_desc,
-                total_positive, total_negative, total_reviews, collected_at
+                total_positive, total_negative, total_reviews
             ) VALUES (
                 %(appid)s, %(review_score)s, %(review_score_desc)s,
-                %(total_positive)s, %(total_negative)s, %(total_reviews)s, %(collected_at)s
+                %(total_positive)s, %(total_negative)s, %(total_reviews)s
             )
             ON CONFLICT (appid) DO UPDATE SET
                 review_score      = EXCLUDED.review_score,
                 review_score_desc = EXCLUDED.review_score_desc,
                 total_positive    = EXCLUDED.total_positive,
                 total_negative    = EXCLUDED.total_negative,
-                total_reviews     = EXCLUDED.total_reviews,
-                collected_at      = EXCLUDED.collected_at
+                total_reviews     = EXCLUDED.total_reviews
         """, summary)
     conn.commit()
 
@@ -222,7 +220,6 @@ def collect_game(appid, max_pages=MAX_PAGES):
                 "total_positive":    qs.get("total_positive"),
                 "total_negative":    qs.get("total_negative"),
                 "total_reviews":     qs.get("total_reviews"),
-                "collected_at":      int(time.time()),
             }
 
         reviews = data.get("reviews", [])
