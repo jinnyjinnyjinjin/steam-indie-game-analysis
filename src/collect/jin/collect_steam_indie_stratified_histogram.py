@@ -40,7 +40,7 @@ SAMPLE_PATH = Path(sys.argv[1])
 if not SAMPLE_PATH.is_absolute():
     SAMPLE_PATH = _ROOT / SAMPLE_PATH
 
-OUTPUT_PATH = _ROOT / "data/raw/steam_origin_indie_review_histogram.csv"
+OUTPUT_PATH = _ROOT / "data/raw/steam_indie_review_histogram.csv"
 LOG_PATH    = _ROOT / "data/logs/steam_indie_collection_log_histogram.json"
 
 SLEEP_SEC        = 1.2
@@ -73,7 +73,6 @@ def ensure_table(conn):
             CREATE TABLE IF NOT EXISTS steam_indie_review_histogram (
                 appid                BIGINT,
                 name                 TEXT,
-                stratum              TEXT,
                 release_date         DATE,
                 hist_start_date      DATE,
                 hist_end_date        DATE,
@@ -101,11 +100,11 @@ def flush_to_db(conn, batch):
     with conn.cursor() as cur:
         cur.executemany("""
             INSERT INTO steam_indie_review_histogram (
-                appid, name, stratum, release_date,
+                appid, name, release_date,
                 hist_start_date, hist_end_date,
                 date, recommendations_up, recommendations_down, data_type
             ) VALUES (
-                %(appid)s, %(name)s, %(stratum)s, %(release_date)s,
+                %(appid)s, %(name)s, %(release_date)s,
                 %(hist_start_date)s, %(hist_end_date)s,
                 %(date)s, %(recommendations_up)s, %(recommendations_down)s, %(data_type)s
             )
@@ -133,7 +132,6 @@ df['release_date'] = pd.to_datetime(df['release_date'], errors='coerce')
 targets = df.reset_index(drop=True)
 
 print(f"수집 대상: {len(targets)}개 게임")
-print(targets['stratum'].value_counts().sort_index())
 print()
 
 # ── 메인 수집 루프 ────────────────────────────────────────────
@@ -152,13 +150,12 @@ for i, row in targets.iterrows():
     appid        = row['appid']
     name         = row['name']
     release_date = row['release_date']
-    stratum      = row['stratum']
 
     if appid in done_appids:
         print(f"[{i+1}/{len(targets)}] {name} — 이미 수집됨, 스킵")
         continue
 
-    print(f"[{i+1}/{len(targets)}] {name} (appid={appid}, 층={stratum}) 수집 중...")
+    print(f"[{i+1}/{len(targets)}] {name} (appid={appid}, 수집 중...")
 
     data = fetch_histogram(appid)
     time.sleep(SLEEP_SEC)
@@ -181,7 +178,6 @@ for i, row in targets.iterrows():
         rows.append({
             "appid":                appid,
             "name":                 name,
-            "stratum":              stratum,
             "release_date":         release_date.date(),
             "hist_start_date":      start_date,
             "hist_end_date":        end_date,
@@ -195,7 +191,6 @@ for i, row in targets.iterrows():
         rows.append({
             "appid":                appid,
             "name":                 name,
-            "stratum":              stratum,
             "release_date":         release_date.date(),
             "hist_start_date":      start_date,
             "hist_end_date":        end_date,
@@ -219,7 +214,6 @@ for i, row in targets.iterrows():
     log.append({
         "appid":         appid,
         "name":          name,
-        "stratum":       stratum,
         "status":        "success",
         "rollup_months": rollup_months,
         "recent_days":   recent_days,
@@ -252,5 +246,3 @@ if df_result.empty:
 else:
     print(f"\\n=== data_type 분포 ===")
     print(df_result['data_type'].value_counts())
-    print(f"\\n=== 층별 수집 게임 수 ===")
-    print(df_result.groupby('stratum')['appid'].nunique())

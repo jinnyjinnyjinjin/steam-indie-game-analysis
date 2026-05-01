@@ -14,7 +14,10 @@ def get_connection():
 
 
 def get_engine():
-    engine = create_engine(os.environ["DATABASE_URL"])
+    engine = create_engine(
+        os.environ["DATABASE_URL"],
+        isolation_level="AUTOCOMMIT",
+    )
     with engine.connect() as c:
         c.execute(text("SET search_path TO public"))
     return engine
