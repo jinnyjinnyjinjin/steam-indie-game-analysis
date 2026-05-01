@@ -16,8 +16,8 @@ from datetime import datetime
 import argparse
 
 # --- 설정 ---
-# 기본 입력 파일: 층화 추출된 샘플 파일
-DEFAULT_INPUT = os.path.join(PROJECT_ROOT, "data/preprocessed/steam_indie_genre_stratified_sample.csv")
+# 기본 입력 파일: 전처리 완료된 전체 모집단
+DEFAULT_INPUT = os.path.join(PROJECT_ROOT, "data/preprocessed/steam_indie_games.csv")
 # 수집 완료된 appid를 기록할 JSON 로그 파일
 CHECKPOINT_PATH = os.path.join(PROJECT_ROOT, "data/logs/collect_tags_checkpoint.json")
 BATCH_SIZE = 20
@@ -82,12 +82,6 @@ def main():
     parser.add_argument(
         "--input", type=str, default=DEFAULT_INPUT, help="입력 CSV 경로"
     )
-    parser.add_argument(
-        "--strata",
-        nargs="+",
-        default=["large_high", "mid_high", "small_high"],
-        help="수집할 계층 지정 (예: large_high mid_high). 전체 수집 시 'all' 입력",
-    )
     args = parser.parse_args()
 
     # 2. 수집 대상 로드
@@ -100,17 +94,7 @@ def main():
         print("Error: 입력 CSV에 'appid' 컬럼이 없습니다.")
         return
 
-    # 계층 필터링 로직
-    if "all" not in args.strata:
-        if "stratum" not in df_raw.columns:
-            print("Error: 필터링을 위한 'stratum' 컬럼이 CSV에 없습니다. 전체 수집을 위해 --strata all 을 사용하세요.")
-            return
-        df_filtered = df_raw[df_raw["stratum"].isin(args.strata)]
-        all_appids = df_filtered["appid"].unique().tolist()
-        strata_info = ", ".join(args.strata)
-    else:
-        all_appids = df_raw["appid"].unique().tolist()
-        strata_info = "전체 (All)"
+    all_appids = df_raw["appid"].unique().tolist()
 
     # 3. 체크포인트 로드 (JSON 로그 확인)
     collected = load_checkpoint()
@@ -124,10 +108,10 @@ def main():
         return
 
     print(f"=== SteamSpy 태그 수집 시작 (PostgreSQL) ===")
-    print(f"입력 파일: {args.input}")
-    print(f"전체 대상: {len(all_appids):,}개")
-    print(f"기존 수집(로그 기준): {len(collected):,}개")
-    print(f"신규 수집 대상: {len(to_collect):,}개")
+    print(f"입력 파일 : {args.input}")
+    print(f"전체 대상 : {len(all_appids):,}개")
+    print(f"기존 수집  : {len(collected):,}개")
+    print(f"신규 수집  : {len(to_collect):,}개")
     print(f"==============================")
 
     batch_data = []
