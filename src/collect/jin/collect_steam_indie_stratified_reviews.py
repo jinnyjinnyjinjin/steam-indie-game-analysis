@@ -19,7 +19,7 @@ SAMPLE_PATH = Path(sys.argv[1])
 if not SAMPLE_PATH.is_absolute():
     SAMPLE_PATH = _ROOT / SAMPLE_PATH
 
-OUTPUT_PATH      = _ROOT / "data/raw/steam_origin_indie_reviews.csv"
+OUTPUT_PATH      = _ROOT / "data/raw/steam_indie_reviews.csv"
 CHECKPOINT_PATH   = _ROOT / "data/logs/steam_indie_reviews_checkpoint.jsonl"
 DONE_APPIDS_PATH  = _ROOT / "data/logs/steam_indie_reviews_done.json"
 API_ERROR_PATH    = _ROOT / "data/logs/steam_indie_reviews_api_errors.json"
