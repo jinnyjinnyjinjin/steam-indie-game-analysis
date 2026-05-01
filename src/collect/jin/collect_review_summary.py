@@ -99,7 +99,7 @@ def main():
         if not sample_path.is_absolute():
             sample_path = _ROOT / sample_path
     else:
-        sample_path = _ROOT / "data/preprocessed/steam_indie_games.csv"
+        sample_path = _ROOT / "data/preprocessed/steam_indie_genre_stratified_sample.csv"
 
     df = pd.read_csv(sample_path)
     sample_appids = df['appid'].unique().tolist()
