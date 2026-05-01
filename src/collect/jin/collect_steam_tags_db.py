@@ -37,7 +37,7 @@ def init_db():
             owners TEXT,
             positive INTEGER,
             negative INTEGER,
-            price INTEGER,
+            price INTEGER, 
             tags JSONB
         )
     """)
@@ -136,8 +136,8 @@ def main():
     # PostgreSQL 용 쿼리 (ON CONFLICT 구문 사용)
     query = """
         INSERT INTO steam_indie_tags 
-        (appid, name, developer, publisher, owners, positive, negative, price, tags, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (appid, name, developer, publisher, owners, positive, negative, price, tags)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (appid) DO UPDATE SET
         name = EXCLUDED.name,
         developer = EXCLUDED.developer,
@@ -163,8 +163,7 @@ def main():
                     data.get("positive"),
                     data.get("negative"),
                     data.get("price"),
-                    json.dumps(data.get("tags", {}), ensure_ascii=False),
-                    datetime.now(),
+                    json.dumps(data.get("tags", {}), ensure_ascii=False)
                 )
                 batch_data.append(row)
                 success_batch_ids.append(int(appid))
