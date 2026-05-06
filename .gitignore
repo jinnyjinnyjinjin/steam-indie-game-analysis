@@ -23,6 +23,12 @@ _context/
 _templates/
 .claude/
 
+# VSCode
+.vscode/
+
+# Codex
+AGENTS.md
+
 # MacOS
 .DS_Store
 .ipynb_checkpoints/
