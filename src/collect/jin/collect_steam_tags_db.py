@@ -10,6 +10,7 @@ if PROJECT_ROOT not in sys.path:
 from src.utils.db import get_connection
 import requests
 import time
+import random
 import json
 import pandas as pd
 from datetime import datetime
@@ -22,6 +23,9 @@ DEFAULT_INPUT = os.path.join(PROJECT_ROOT, "data/preprocessed/steam_indie_games.
 CHECKPOINT_PATH = os.path.join(PROJECT_ROOT, "data/logs/collect_tags_checkpoint.json")
 BATCH_SIZE = 20
 SLEEP_SEC = 1.2  # SteamSpy API 속도 제한
+MAX_RETRIES = 5
+BACKOFF_BASE_SEC = 1.5
+BACKOFF_JITTER_SEC = 0.7
 
 def init_db():
     """데이터베이스 및 테이블 초기화 (PostgreSQL)"""
@@ -41,6 +45,26 @@ def init_db():
             tags JSONB
         )
     """)
+    # 기존에 PK 없이 생성된 테이블에서도 ON CONFLICT (appid)가 동작하도록 보정한다.
+    # CREATE TABLE IF NOT EXISTS는 이미 존재하는 테이블의 제약조건을 변경하지 않는다.
+    try:
+        cursor.execute("""
+            ALTER TABLE steam_indie_tags
+            ALTER COLUMN appid SET NOT NULL
+        """)
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS steam_indie_tags_appid_uidx
+            ON steam_indie_tags (appid)
+        """)
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        raise RuntimeError(
+            "steam_indie_tags.appid에 unique index를 만들 수 없습니다. "
+            "기존 테이블에 appid 중복 또는 NULL 값이 있는지 확인하세요."
+        ) from e
+
     conn.commit()
     cursor.close()
     return conn
@@ -64,15 +88,66 @@ def save_checkpoint(collected_set):
         json.dump(list(collected_set), f, indent=4)
 
 
-def fetch_steamspy_data(appid):
-    """SteamSpy API 호출"""
+def fetch_steamspy_data(appid, max_retries=MAX_RETRIES):
+    """SteamSpy API 호출 (비JSON 응답/일시 오류 재시도 포함)"""
     url = f"https://steamspy.com/api.php?request=appdetails&appid={appid}"
-    try:
-        resp = requests.get(url, timeout=15)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as e:
-        print(f"\n[Error] {appid} 호출 실패: {e}")
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url, timeout=15)
+            content_type = resp.headers.get("Content-Type", "").lower()
+            body_text = (resp.text or "").strip()
+
+            if resp.status_code != 200:
+                raise requests.HTTPError(f"HTTP {resp.status_code}")
+
+            if "application/json" in content_type:
+                try:
+                    return resp.json()
+                except ValueError:
+                    # Content-Type이 JSON이어도 깨진 응답이 올 수 있어 아래 재시도 로직으로 처리
+                    pass
+
+            preview = body_text.replace("\n", " ")[:120] if body_text else "<empty>"
+            is_too_many_connections = "too many connections" in body_text.lower()
+
+            if attempt < max_retries:
+                wait_sec = BACKOFF_BASE_SEC * attempt + random.uniform(
+                    0, BACKOFF_JITTER_SEC
+                )
+                reason = (
+                    "SteamSpy 과부하 응답"
+                    if is_too_many_connections
+                    else "비JSON/비정상 응답"
+                )
+                print(
+                    f"\n[Warn] {appid} {reason} (시도 {attempt}/{max_retries}, "
+                    f"Content-Type: {content_type or 'N/A'}, Body: {preview}) "
+                    f"-> {wait_sec:.1f}초 후 재시도"
+                )
+                time.sleep(wait_sec)
+                continue
+
+            print(
+                f"\n[Error] {appid} 호출 실패: 비정상 응답 지속 "
+                f"(Content-Type: {content_type or 'N/A'}, Body: {preview})"
+            )
+            return None
+
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries:
+                wait_sec = BACKOFF_BASE_SEC * attempt + random.uniform(
+                    0, BACKOFF_JITTER_SEC
+                )
+                print(
+                    f"\n[Warn] {appid} 요청 실패 (시도 {attempt}/{max_retries}): {e} "
+                    f"-> {wait_sec:.1f}초 후 재시도"
+                )
+                time.sleep(wait_sec)
+                continue
+            print(f"\n[Error] {appid} 호출 실패: {e}")
+            return None
+
     return None
 
 
