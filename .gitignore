@@ -8,3 +8,32 @@ wheels/
 
 # Virtual environments
 .venv
+
+# environment variables
+.env
+
+# data
+data/
+src/notebooks/JH/steam_indie_merged_data.csv
+src/notebooks/JH/merged_steam_reviews.csv
+
+# Claude
+CLAUDE.md
+_context/
+_templates/
+.claude/
+
+# VSCode
+.vscode/
+
+# Codex
+AGENTS.md
+
+# MacOS
+.DS_Store
+.ipynb_checkpoints/
+
+# node
+node_modules/
+package-lock.json
+package.json
