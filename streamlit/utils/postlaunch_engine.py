@@ -756,7 +756,7 @@ def create_postlaunch_patch_ops_agent(temperature: float = 0.0, max_retries: int
         root = find_project_root()
         load_dotenv()
         load_dotenv(root / ".env")
-        load_dotenv(root / "streamlit_app" / ".env")
+        load_dotenv(root / "streamlit" / ".env")
 
     google_cloud_project = _read_secret_or_env("GOOGLE_CLOUD_PROJECT")
     google_cloud_location = _read_secret_or_env("GOOGLE_CLOUD_LOCATION", "us-central1")
