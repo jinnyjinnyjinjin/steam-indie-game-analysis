@@ -61,7 +61,7 @@ prelaunch_page = st.Page(
 
 postlaunch_page = st.Page(
     page=str(BASE_DIR / "pages" / "postlaunch_report.py"),
-    title="출시 후 패치·운영",
+    title="출시 후 패치·운영 제안",
     icon="🛠️",
 )
 
@@ -87,10 +87,10 @@ with st.sidebar:
     st.markdown("### 메뉴")
     st.page_link(home_page, label="홈", icon="🏠")
     st.page_link(prelaunch_page, label="출시 전 체크리스트", icon="🧭")
-    st.page_link(postlaunch_page, label="출시 후 패치·운영", icon="🛠️")
+    st.page_link(postlaunch_page, label="출시 후 패치·운영 제안", icon="🛠️")
 
     st.divider()
-    st.markdown('<div class="sidebar-footer">버전 0.9.13</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-footer">버전 0.11.1</div>', unsafe_allow_html=True)
 
 # ============================================================
 # 선택된 페이지 실행

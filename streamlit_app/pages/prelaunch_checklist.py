@@ -14,7 +14,6 @@ from utils.prelaunch_engine import (
     select_condition_evidence,
     get_overall_issues,
     make_tag_dna_summary,
-    make_condition_summary_df,
     make_evidence_display_df,
     build_checklist_prompt,
     make_prelaunch_cache_key,
@@ -43,6 +42,41 @@ def inject_dashboard_style() -> None:
             min-height: 112px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.12);
         }
+        .dash-card.tone-high {
+            background: linear-gradient(135deg, rgba(239,68,68,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(239,68,68,0.46);
+        }
+        .dash-card.tone-mid {
+            background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(245,158,11,0.44);
+        }
+        .dash-card.tone-low {
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(255,255,255,0.035));
+            border-color: rgba(59,130,246,0.38);
+        }
+        .dash-card.tone-good {
+            background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(255,255,255,0.035));
+            border-color: rgba(34,197,94,0.38);
+        }
+        .dash-card.tone-info {
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(255,255,255,0.035));
+            border-color: rgba(59,130,246,0.38);
+        }
+        .dash-card.tone-warn {
+            background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(245,158,11,0.44);
+        }
+        .dash-card.tone-danger {
+            background: linear-gradient(135deg, rgba(239,68,68,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(239,68,68,0.46);
+        }
+        .dash-card.tone-high .dash-kpi-value,
+        .dash-card.tone-danger .dash-kpi-value { color: #fca5a5; }
+        .dash-card.tone-mid .dash-kpi-value,
+        .dash-card.tone-warn .dash-kpi-value { color: #fcd34d; }
+        .dash-card.tone-low .dash-kpi-value { color: #93c5fd; }
+        .dash-card.tone-good .dash-kpi-value { color: #86efac; }
+        .dash-card.tone-info .dash-kpi-value { color: #93c5fd; }
         .dash-kpi-value {
             font-size: 1.95rem;
             font-weight: 800;
@@ -99,26 +133,49 @@ def inject_dashboard_style() -> None:
             padding: 16px 18px;
             margin-bottom: 14px;
         }
-        .check-card.high { border-left-color: #ef4444; }
-        .check-card.mid { border-left-color: #f59e0b; }
-        .check-card.low { border-left-color: #3b82f6; }
-        .check-title { font-size: 1.04rem; font-weight: 800; margin-bottom: 6px; }
+        .check-card.high {
+            border-color: rgba(239,68,68,0.36);
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(255,255,255,0.035));
+        }
+        .check-card.mid {
+            border-color: rgba(245,158,11,0.34);
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(255,255,255,0.035));
+        }
+        .check-card.low {
+            border-color: rgba(59,130,246,0.34);
+            border-left-color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(255,255,255,0.035));
+        }
+        .check-title {
+            font-size: 1.08rem;
+            font-weight: 850;
+            color: #f8fafc;
+            margin: 8px 0 8px 0;
+        }
         .check-question {
-            font-size: 0.97rem;
-            font-weight: 700;
-            line-height: 1.55;
-            margin: 8px 0 12px 0;
+            font-size: 1.02rem;
+            font-weight: 750;
+            line-height: 1.62;
+            color: #f8fafc;
+            margin: 8px 0 16px 0;
         }
         .mini-label {
-            font-size: 0.78rem;
-            font-weight: 800;
-            color: rgba(250,250,250,0.58);
-            margin-bottom: 4px;
+            font-size: 0.9rem;
+            font-weight: 850;
+            color: #e5e7eb;
+            margin: 12px 0 6px 0;
         }
         .mini-text {
-            font-size: 0.9rem;
-            line-height: 1.55;
-            color: rgba(250,250,250,0.84);
+            font-size: 0.98rem;
+            font-weight: 520;
+            line-height: 1.68;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+        }
+        .mini-text.evidence {
+            color: #cbd5e1;
         }
         </style>
         """,
@@ -131,11 +188,12 @@ def _html_text(value) -> str:
 
 
 def render_metric_card(label: str, value: str, caption: str = "", tone: str = "neutral") -> None:
-    """요약 KPI 숫자는 의미 색상과 혼동되지 않도록 중립색으로 통일합니다."""
+    """요약 KPI 카드를 출력합니다. tone 값으로 중요도에 따른 색상만 최소 적용합니다."""
+    safe_tone = str(tone) if str(tone) in {"neutral", "high", "mid", "low", "good", "info", "warn", "danger"} else "neutral"
     st.markdown(
         f"""
-        <div class="dash-card">
-            <div class="dash-kpi-value" style="color:#e5e7eb">{_html_text(value)}</div>
+        <div class="dash-card tone-{safe_tone}">
+            <div class="dash-kpi-value">{_html_text(value)}</div>
             <div class="dash-kpi-label">{_html_text(label)}</div>
             <div class="dash-kpi-caption">{_html_text(caption)}</div>
         </div>
@@ -217,6 +275,64 @@ def render_badge(label: str, tone: str = "neutral") -> str:
     return f'<span class="badge badge-{tone}">{html.escape(str(label))}</span>'
 
 
+
+
+def strip_high_urgency_note(text: str) -> str:
+    """카드 화면에서는 High urgency 보조 신호를 숨기고 반복 언급 근거만 보여줍니다."""
+    out = "" if text is None or pd.isna(text) else str(text)
+    out = clean_visible_terms(out)
+    out = re.sub(r"\s*\((?:High urgency|high urgency)[^)]*\)", "", out, flags=re.IGNORECASE)
+    out = re.sub(r"\s*High urgency\s*[:：]?\s*[^.,。)]*", "", out, flags=re.IGNORECASE)
+    out = re.sub(r"\s+", " ", out).strip()
+    return out or "-"
+
+
+
+def compact_evidence_for_card(text: str) -> str:
+    """카드 본문에는 반복 언급 규모만 짧게 보여줍니다."""
+    out = strip_high_urgency_note(text)
+    if not out or out == "-":
+        return "유사 게임 리뷰에서 반복적으로 언급된 항목입니다."
+
+    match = re.search(r"(\d+개\s*게임\s*중\s*\d+개)(?:\([^)]*\))?에서\s*언급", out)
+    if match:
+        return f"{match.group(1)}에서 언급된 항목입니다."
+
+    # 정형 문장이 아닐 때는 첫 문장만 짧게 보여줍니다.
+    first_sentence = re.split(r"(?<=[.!?。])\s+", out)[0].strip()
+    if len(first_sentence) > 90:
+        first_sentence = first_sentence[:87].rstrip() + "..."
+    return first_sentence or "유사 게임 리뷰에서 반복적으로 언급된 항목입니다."
+
+
+def compact_method_for_card(text: str) -> str:
+    """카드 본문에는 점검 방법을 한 문장으로 짧게 보여줍니다."""
+    out = clean_visible_terms(text)
+    if not out or out == "-":
+        return "출시 전 QA와 플레이 테스트에서 해당 항목을 먼저 확인합니다."
+
+    first_sentence = re.split(r"(?<=[.!?。])\s+", out)[0].strip()
+    if len(first_sentence) > 95:
+        first_sentence = first_sentence[:92].rstrip() + "..."
+    return first_sentence
+
+def notify_detail_toggle_change(enabled: bool, page_key: str, detail_label: str) -> None:
+    """상세 근거·검증 보기 상태가 바뀔 때 토스트 알림을 띄웁니다."""
+    prev_key = f"{page_key}_detail_toggle_prev"
+    if prev_key in st.session_state and st.session_state[prev_key] != enabled:
+        if enabled:
+            message = f"{detail_label}가 켜졌습니다. 결과 영역에 상세 탭이 추가됩니다."
+            icon = "🔎"
+        else:
+            message = f"{detail_label}가 꺼졌습니다. 핵심 결과만 표시합니다."
+            icon = "✅"
+        try:
+            st.toast(message, icon=icon)
+        except Exception:
+            st.caption(message)
+    st.session_state[prev_key] = enabled
+
+
 # ============================================================
 # 화면 표시 보조 함수
 # ============================================================
@@ -261,16 +377,19 @@ def render_bar_chart(
     y_col: str,
     x_title: str | None = None,
     y_title: str | None = None,
-    height: int = 300,
+    height: int = 350,
 ) -> None:
-    '''축 라벨이 세로로 돌아가지 않도록 Altair 막대그래프를 출력합니다.'''
-    if df.empty or x_col not in df.columns or y_col not in df.columns:
+    """축 라벨이 잘리지 않도록 여백을 확보해 Altair 막대그래프를 출력합니다."""
+    if df is None or df.empty or x_col not in df.columns or y_col not in df.columns:
         st.info("표시할 그래프 데이터가 없습니다.")
         return
 
     chart_df = df.copy()
     chart_df[x_col] = chart_df[x_col].fillna("미분류").astype(str)
     chart_df[y_col] = pd.to_numeric(chart_df[y_col], errors="coerce").fillna(0)
+
+    max_value = chart_df[y_col].max()
+    y_max = max_value * 1.15 if max_value > 0 else 1
 
     chart = (
         alt.Chart(chart_df)
@@ -281,7 +400,7 @@ def render_bar_chart(
                 title=x_title or x_col,
                 axis=alt.Axis(
                     labelAngle=0,
-                    labelLimit=140,
+                    labelLimit=180,
                     titleAngle=0,
                     titlePadding=12,
                 ),
@@ -289,21 +408,38 @@ def render_bar_chart(
             y=alt.Y(
                 f"{y_col}:Q",
                 title=y_title or y_col,
+                scale=alt.Scale(domain=[0, y_max], nice=True),
                 axis=alt.Axis(
                     titleAngle=0,
                     titleAlign="left",
                     titleAnchor="start",
-                    titleX=-42,
+                    titleX=0,
                     titleY=-8,
-                    titlePadding=10,
+                    titlePadding=8,
+                    labelPadding=6,
                 ),
+            ),
+            color=alt.condition(
+                alt.FieldOneOfPredicate(field=x_col, oneOf=["우선 점검", "추가 검토", "참고"]),
+                alt.Color(
+                    f"{x_col}:N",
+                    scale=alt.Scale(
+                        domain=["우선 점검", "추가 검토", "참고"],
+                        range=["#ef4444", "#f59e0b", "#3b82f6"],
+                    ),
+                    legend=None,
+                ),
+                alt.value("#60a5fa"),
             ),
             tooltip=[
                 alt.Tooltip(f"{x_col}:N", title=x_title or x_col),
                 alt.Tooltip(f"{y_col}:Q", title=y_title or y_col),
             ],
         )
-        .properties(height=height)
+        .properties(
+            height=height,
+            padding={"top": 18, "left": 8, "right": 8, "bottom": 8},
+        )
     )
 
     st.altair_chart(chart, use_container_width=True)
@@ -669,20 +805,18 @@ def render_prelaunch_validation_guide(validation_df: pd.DataFrame) -> None:
         else:
             result_message = "일부 항목은 근거 데이터 기준으로 다시 확인하거나 보정할 필요가 있습니다."
 
-    render_section_lead(
-        "생성 결과를 근거 데이터 기준으로 다시 확인합니다",
-        "생성된 체크리스트가 임의로 우선순위를 바꾸지 않았는지, "
-        "근거 데이터에 없는 이슈를 포함하지 않았는지 확인합니다. "
-        "최종 체크리스트 표에는 근거 데이터에서 계산된 점검 우선도를 다시 적용합니다.",
+    st.info(
+        "생성 결과가 사전 계산된 점검 우선도와 점검 유형 기준을 유지했는지 확인합니다.      \n"
+        "확인 필요 항목이 있으면 최종 표에서는 근거 데이터 기준으로 보정합니다."
     )
 
     metric_cols = st.columns(3)
     with metric_cols[0]:
-        render_metric_card("검증 항목", f"{validation_count:,}개", "생성 결과와 근거 기준을 비교한 항목")
+        render_metric_card("검증 항목", f"{validation_count:,}개", "생성 결과와 근거 기준을 비교한 항목", tone="info")
     with metric_cols[1]:
-        render_metric_card("통과", f"{passed_count:,}개", "근거 데이터 기준과 일치한 항목")
+        render_metric_card("통과", f"{passed_count:,}개", "근거 데이터 기준과 일치한 항목", tone="good")
     with metric_cols[2]:
-        render_metric_card("확인 필요", f"{warning_count:,}개", "근거 기준과 차이가 있어 확인할 항목")
+        render_metric_card("확인 필요", f"{warning_count:,}개", "근거 기준과 차이가 있어 확인할 항목", tone="high")
 
     st.markdown(
         f"""
@@ -755,10 +889,9 @@ def render_evidence_overview(selected_evidence: pd.DataFrame) -> None:
     if selected_evidence.empty:
         return
 
-    st.subheader("유사 게임에서 자주 언급된 이슈")
     st.markdown(
         """
-        아래 항목은 입력 조건과 유사한 게임들의 출시 초기 리뷰에서 반복적으로 나타난 이슈입니다.  
+        입력 조건과 유사한 게임들의 출시 초기 리뷰에서 반복적으로 나타난 이슈를 요약합니다.  
         긍정적으로 언급된 요소는 **강화 요소**로, 부정적으로 언급된 요소는 **확인 필요 요소**로 정리됩니다.
         """
     )
@@ -802,13 +935,13 @@ def render_evidence_overview(selected_evidence: pd.DataFrame) -> None:
     risk_count = int((selected_evidence.get("issue_direction", pd.Series(dtype=str)) == "리스크 요소").sum())
     avg_ratio = _safe_ratio_series(selected_evidence, "issue_game_ratio").mean()
     with m1:
-        render_metric_card("점검 근거 항목", f"{len(selected_evidence):,}개", "체크리스트 작성에 사용한 반복 이슈")
+        render_metric_card("점검 근거 항목", f"{len(selected_evidence):,}개", "체크리스트 작성에 사용한 반복 이슈", tone="info")
     with m2:
-        render_metric_card("우선 점검 항목", f"{high_count:,}개", "출시 전에 먼저 점검할 필요가 큰 항목")
+        render_metric_card("우선 점검 항목", f"{high_count:,}개", "출시 전에 먼저 점검할 필요가 큰 항목", tone="high")
     with m3:
-        render_metric_card("확인 필요 요소", f"{risk_count:,}개", "부정 리뷰 맥락에서 반복된 항목")
+        render_metric_card("확인 필요 요소", f"{risk_count:,}개", "부정 리뷰 맥락에서 반복된 항목", tone="high")
     with m4:
-        render_metric_card("평균 반복 비율", f"{avg_ratio:.1f}%", "유사 게임 중 해당 이슈가 나타난 비율의 평균")
+        render_metric_card("평균 반복 비율", f"{avg_ratio:.1f}%", "유사 게임 중 해당 이슈가 나타난 비율의 평균", tone="info")
 
     st.caption(
         "점검 근거 항목은 체크리스트 작성에 사용된 반복 이슈입니다. "
@@ -1020,6 +1153,14 @@ def render_prelaunch_top_issue_chart(chart_df: pd.DataFrame) -> None:
                     titlePadding=10,
                 ),
             ),
+            color=alt.Color(
+                "점검 우선도:N",
+                scale=alt.Scale(
+                    domain=["우선 점검", "추가 검토", "참고"],
+                    range=["#ef4444", "#f59e0b", "#3b82f6"],
+                ),
+                legend=None,
+            ),
             tooltip=[
                 alt.Tooltip("이슈:N", title="이슈"),
                 alt.Tooltip("점검 우선도:N", title="점검 우선도"),
@@ -1056,17 +1197,16 @@ def render_checklist_overview(
 
     summary_cols = st.columns(4)
     with summary_cols[0]:
-        render_metric_card("전체 점검 항목", f"{total_count:,}개", "생성된 출시 전 체크리스트 항목")
+        render_metric_card("전체 점검 항목", f"{total_count:,}개", "생성된 출시 전 체크리스트 항목", tone="neutral")
     with summary_cols[1]:
-        render_metric_card("우선 점검", f"{high_count:,}개", "출시 전에 우선 점검할 항목")
+        render_metric_card("우선 점검", f"{high_count:,}개", "출시 전에 우선 점검할 항목", tone="high")
     with summary_cols[2]:
-        render_metric_card("추가 검토", f"{mid_count:,}개", "조건에 따라 추가로 확인할 항목")
+        render_metric_card("추가 검토", f"{mid_count:,}개", "조건에 따라 추가로 확인할 항목", tone="mid")
     with summary_cols[3]:
-        render_metric_card("참고", f"{low_count:,}개", "후순위로 참고할 항목")
+        render_metric_card("참고", f"{low_count:,}개", "후순위로 참고할 항목", tone="low")
 
     st.caption(
         "아래 그래프는 전체 체크리스트 기준 요약입니다. "
-        "왼쪽은 점검 우선도의 분포를, 오른쪽은 유사 게임 리뷰에서 반복적으로 언급된 주요 점검 이슈를 보여줍니다."
     )
 
     chart_df = checklist_df.copy()
@@ -1089,6 +1229,7 @@ def render_checklist_overview(
 
     with c1:
         st.caption("점검 우선도 분포")
+        st.caption("전체 체크리스트 항목이 우선 점검, 추가 검토, 참고 중 어디에 많이 분포하는지 보여줍니다.")
         render_bar_chart(
             priority_chart_df,
             x_col="점검 우선도",
@@ -1127,6 +1268,8 @@ def render_checklist_cards(checklist_df: pd.DataFrame) -> None:
     for idx, row in checklist_view.iterrows():
         p_class = _priority_class(row.get("우선순위", "-"))
         tag_label = _card_tag_value(row)
+        evidence_summary = strip_high_urgency_note(row.get("근거 요약", "-"))
+        check_method = clean_visible_terms(row.get("확인 방법", "-"))
         badges = "".join(
             [
                 render_badge(_priority_display(row.get("우선순위", "-")), p_class),
@@ -1140,23 +1283,14 @@ def render_checklist_cards(checklist_df: pd.DataFrame) -> None:
                 <div>{badges}</div>
                 <div class="check-title">{idx + 1}. {_html_text(row.get('근거 이슈', '-'))}</div>
                 <div class="check-question">{_html_text(row.get('체크 질문', '-'))}</div>
-                <div class="mini-label">왜 확인해야 하나요?</div>
-                <div class="mini-text">{_html_text(row.get('근거 요약', '-'))}</div>
-                <div class="mini-label">출시 전 확인 방법</div>
-                <div class="mini-text">{_html_text(row.get('확인 방법', '-'))}</div>
+                <div class="mini-label">출시 전 점검 방법</div>
+                <div class="mini-text">{_html_text(check_method)}</div>
+                <div class="mini-label">반복 언급 근거</div>
+                <div class="mini-text evidence">{_html_text(evidence_summary)}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-
-        with st.expander("확인 방법과 근거 조건 보기", expanded=False):
-            left, right = st.columns([1, 1])
-            with left:
-                st.markdown("**확인 방법**")
-                st.write(row.get("확인 방법", "-"))
-            with right:
-                st.markdown("**근거 조건**")
-                st.write(row.get("근거 조건", "-"))
 
 
 # ============================================================
@@ -1165,29 +1299,37 @@ def render_checklist_cards(checklist_df: pd.DataFrame) -> None:
 inject_dashboard_style()
 
 st.title("🧭 출시 전 체크리스트")
-st.markdown(
-    """
+
+render_section_lead(
+    "이 분석으로 할 수 있는 것",
+    """- 유사 게임에서 자주 칭찬받은 강점을 확인할 수 있습니다.
+- 출시 전에 점검해야 할 UX, 난이도, 콘텐츠, 가격 관련 리스크를 확인할 수 있습니다.
+- 팀 회의나 QA에서 사용할 출시 전 체크리스트 초안을 만들 수 있습니다.""",
+)
+
+render_section_lead(
+    "사용 흐름",
+    """1. 장르·가격대·Steam 태그·플레이 방식을 선택합니다.
+2. [조건 적용] 버튼을 눌러 유사 게임 리뷰 기반 체크리스트를 생성합니다.
+3. 점검 우선도, 점검 유형, 이슈 태그로 필요한 점검 카드만 확인합니다.
+4. 필요한 경우 사이드바의 [상세 근거·검증 보기]를 켜서 반복 이슈와 매칭 게임을 확인합니다.""",
+)
+
+with st.expander("이 페이지 설명 자세히 보기", expanded=False):
+    st.markdown(
+        """
 이 페이지는 개발자가 **출시 전에 확인해야 할 항목**을 정리하기 위한 화면입니다.
 
 장르, 가격대, Steam 태그, 플레이 방식을 입력하면  
 비슷한 조건의 인디게임들이 출시 초기에 어떤 부분에서 좋은 평가를 받았고,  
 어떤 부분에서 불만이 반복되었는지 확인합니다.
-"""
-)
 
-st.markdown(
-    """
-    **이럴 때 사용합니다**
-    - 출시 전에 점검해야 할 UX, 난이도, 콘텐츠, 가격 관련 리스크를 보고 싶을 때
-    - 비슷한 게임에서 자주 칭찬받거나 비판받은 요소를 확인하고 싶을 때
-    - 팀 회의용 출시 전 QA 체크리스트 초안이 필요할 때
-    """
-)
-
-render_section_lead(
-    "이 화면은 출시 전에 확인할 점검 항목을 정리합니다",
-    "1. 장르·가격대·태그·플레이 방식을 선택합니다.\n2. 유사 Steam 인디게임의 출시 초기 리뷰에서 반복된 이슈를 확인합니다.\n3. 우선 점검할 항목과 강화할 요소를 체크리스트로 정리합니다.",
-)
+**이럴 때 사용합니다**
+- 출시 전에 점검해야 할 UX, 난이도, 콘텐츠, 가격 관련 리스크를 보고 싶을 때
+- 비슷한 게임에서 자주 칭찬받거나 비판받은 요소를 확인하고 싶을 때
+- 팀 회의용 출시 전 QA 체크리스트 초안이 필요할 때
+        """
+    )
 
 st.divider()
 
@@ -1215,6 +1357,17 @@ with st.sidebar:
         "장르·가격대·Steam 태그·플레이 방식을 선택하면, "
         "유사 게임의 출시 초기 리뷰에서 반복된 이슈를 바탕으로 출시 전 체크리스트를 생성합니다."
     )
+    show_detail_sections = st.checkbox(
+        "상세 근거·검증 보기",
+        value=False,
+        help="기본 화면은 체크리스트만 보여줍니다. 켜면 근거 보기와 검증·참고 탭을 추가로 확인할 수 있습니다.",
+    )
+
+notify_detail_toggle_change(
+    enabled=show_detail_sections,
+    page_key="prelaunch",
+    detail_label="상세 근거·검증 보기",
+)
 
 # ============================================================
 # 데이터 로드
@@ -1279,32 +1432,33 @@ if "prelaunch_tag_match_input" not in st.session_state:
     st.session_state["prelaunch_tag_match_input"] = "any"
 
 
+def reset_prelaunch_input_state() -> None:
+    """입력 조건과 현재 생성 결과를 초기화합니다.
+
+    Streamlit은 위젯이 생성된 뒤 같은 실행 흐름에서 해당 위젯 key를
+    직접 수정하면 오류가 발생합니다. 따라서 초기화는 버튼 콜백에서
+    먼저 처리합니다.
+    """
+    for key in [
+        "prelaunch_genres_input",
+        "prelaunch_price_groups_input",
+        "prelaunch_tags_input",
+        "prelaunch_play_styles_input",
+    ]:
+        st.session_state[key] = []
+
+    st.session_state["prelaunch_tag_match_input"] = "any"
+    st.session_state.pop("prelaunch_user_condition", None)
+    st.session_state.pop("prelaunch_llm_result", None)
+    st.session_state.pop("prelaunch_cache_key", None)
+    st.session_state["prelaunch_reset_notice"] = True
+
+
 # ============================================================
 # 조건 입력 폼
 # ============================================================
-st.header("1. 개발자 입력 조건")
-
-reset_col, guide_col = st.columns([1, 5])
-with reset_col:
-    if st.button(
-        "입력 조건 초기화",
-        help="선택한 조건과 이전 생성 결과를 모두 지우고 처음 상태로 되돌립니다.",
-    ):
-        for key in [
-            "prelaunch_genres_input",
-            "prelaunch_price_groups_input",
-            "prelaunch_tags_input",
-            "prelaunch_play_styles_input",
-        ]:
-            st.session_state[key] = []
-        st.session_state["prelaunch_tag_match_input"] = "any"
-        st.session_state.pop("prelaunch_user_condition", None)
-        st.session_state.pop("prelaunch_llm_result", None)
-        st.session_state.pop("prelaunch_cache_key", None)
-        st.rerun()
-
-with guide_col:
-    st.caption("시연 시에는 조건을 직접 선택한 뒤 **조건 적용** 버튼을 눌러 결과를 확인합니다.")
+st.header("1. 게임 속성 선택")
+st.caption("장르, 가격대, Steam 태그, 플레이 방식을 선택한 뒤 **조건 적용** 버튼을 누르면 체크리스트가 바로 생성됩니다.")
 
 with st.form("prelaunch_condition_form"):
     col1, col2 = st.columns(2)
@@ -1367,16 +1521,30 @@ with st.form("prelaunch_condition_form"):
         ),
     )
 
-    submitted = st.form_submit_button(
-        "조건 적용",
-        type="primary",
-        help="선택한 조건으로 매칭 게임과 체크리스트 근거 데이터를 다시 계산합니다.",
-    )
-
+    apply_col, reset_col = st.columns([1, 1])
+    with apply_col:
+        submitted = st.form_submit_button(
+            "조건 적용",
+            type="primary",
+            use_container_width=True,
+            help="선택한 조건을 적용하고 유사 게임 리뷰 기반 체크리스트를 바로 생성합니다.",
+        )
+    with reset_col:
+        reset_clicked = st.form_submit_button(
+            "입력 조건 초기화",
+            use_container_width=True,
+            help="선택한 조건과 현재 생성 결과를 모두 지우고 처음 상태로 되돌립니다.",
+            on_click=reset_prelaunch_input_state,
+        )
 
 # ============================================================
 # 조건 저장
 # ============================================================
+should_generate_prelaunch_result = False
+
+if st.session_state.pop("prelaunch_reset_notice", False):
+    st.success("입력 조건과 현재 생성 결과를 초기화했습니다.")
+
 if submitted:
     if not any([selected_genres, selected_price_groups, selected_tags, selected_play_styles]):
         st.warning("조건을 하나 이상 선택한 뒤 다시 적용해주세요.")
@@ -1389,16 +1557,16 @@ if submitted:
         "steam_tag_match": tag_match,
         "play_styles": selected_play_styles,
     }
-    # 조건을 바꾸면 이전 생성 결과는 화면에서 제거합니다.
+    # 조건을 바꾸면 이전 생성 결과는 화면에서 제거하고, 새 조건으로 바로 생성합니다.
     st.session_state.pop("prelaunch_llm_result", None)
     st.session_state.pop("prelaunch_cache_key", None)
+    should_generate_prelaunch_result = True
 
 if "prelaunch_user_condition" not in st.session_state:
-    st.info("조건을 선택한 뒤 **조건 적용** 버튼을 눌러주세요.")
+    st.info("게임 속성을 선택한 뒤 **조건 적용** 버튼을 눌러 체크리스트를 생성해주세요.")
     st.stop()
 
 user_condition = st.session_state["prelaunch_user_condition"]
-
 
 # ============================================================
 # 조건 기반 데이터 생성
@@ -1462,84 +1630,16 @@ st.session_state["prelaunch_cache_key"] = cache_key
 
 
 # ============================================================
-# 조건 요약
+# 체크리스트 자동 생성
 # ============================================================
-st.divider()
-st.header("2. 입력 조건 및 유사 게임 요약")
-
-condition_summary_df = make_condition_summary_df(user_condition)
-
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.subheader("입력 조건")
-    st.dataframe(condition_summary_df, use_container_width=True, hide_index=True)
-
-with col2:
-    metric1, metric2, metric3, metric4 = st.columns(4)
-
-    risk_count = int((selected_evidence.get("issue_direction", pd.Series(dtype=str)).astype(str) == "리스크 요소").sum())
-    high_count = int((selected_evidence.get("priority_level", pd.Series(dtype=str)).astype(str) == "상").sum())
-
-    with metric1:
-        render_metric_card("조건 매칭 게임", f"{matched_game_count:,}개", "입력 조건과 직접 매칭")
-
-    with metric2:
-        render_metric_card("분석 리뷰 수", f"{matched_review_count:,}개", "매칭 게임의 리뷰 규모")
-
-    with metric3:
-        render_metric_card("점검 근거 항목", f"{len(selected_evidence):,}개", "체크리스트 작성에 사용한 반복 이슈")
-
-    with metric4:
-        render_metric_card("우선 점검 항목", f"{high_count:,}개", "출시 전에 먼저 점검할 필요가 큰 항목")
-
-st.caption(
-    "숫자가 클수록 입력 조건과 유사한 게임 리뷰에서 해당 이슈가 반복적으로 언급되었다는 의미입니다. "
-    "우선 점검 항목은 출시 전에 먼저 점검할 필요가 큰 항목입니다."
-)
-
-render_evidence_overview(selected_evidence)
-
-
-# ============================================================
-# LLM 생성 영역
-# ============================================================
-st.divider()
-st.header("3. 체크리스트 생성")
-
 cached_result = load_cached_prelaunch_result(run_name, cache_key) if use_cache and not force_regenerate else None
 
-if cached_result is not None and "prelaunch_llm_result" not in st.session_state:
-    st.session_state["prelaunch_llm_result"] = cached_result
-    st.success("동일 조건의 기존 체크리스트 결과를 불러왔습니다.")
-
-col_generate, col_clear = st.columns([1, 1])
-
-with col_generate:
-    generate_clicked = st.button(
-        "🤖 체크리스트 생성",
-        type="primary",
-        use_container_width=True,
-        help="현재 조건과 근거 데이터를 바탕으로 출시 전 점검 체크리스트를 생성합니다.",
-    )
-
-with col_clear:
-    clear_clicked = st.button(
-        "현재 생성 결과 지우기",
-        use_container_width=True,
-        help="화면에 표시된 생성 결과만 지웁니다.",
-    )
-
-if clear_clicked:
-    st.session_state.pop("prelaunch_llm_result", None)
-    st.rerun()
-
-if generate_clicked:
+if should_generate_prelaunch_result:
     if cached_result is not None and not force_regenerate:
         st.session_state["prelaunch_llm_result"] = cached_result
         st.success("동일 조건의 기존 체크리스트 결과를 불러왔습니다.")
     else:
-        with st.spinner("출시 전 체크리스트를 생성하는 중입니다..."):
+        with st.spinner("선택한 게임 속성을 기준으로 출시 전 체크리스트를 생성하는 중입니다..."):
             try:
                 result_dict = generate_prelaunch_checklist_with_llm(
                     checklist_prompt=checklist_prompt,
@@ -1556,14 +1656,12 @@ if generate_clicked:
                     with st.expander("상세 오류 확인", expanded=False):
                         st.exception(e)
                 st.stop()
+elif cached_result is not None and "prelaunch_llm_result" not in st.session_state:
+    st.session_state["prelaunch_llm_result"] = cached_result
+    st.success("동일 조건의 기존 체크리스트 결과를 불러왔습니다.")
 
 if "prelaunch_llm_result" not in st.session_state:
-    st.info("위 버튼을 눌러 체크리스트를 생성해주세요.")
-
-    with st.expander("근거 데이터 먼저 확인하기", expanded=False):
-        evidence_display_df = make_evidence_display_df(selected_evidence)
-        render_wrapped_table(evidence_display_df, height_px=460)
-
+    st.info("현재 조건의 체크리스트가 아직 생성되지 않았습니다. 게임 속성을 확인한 뒤 **조건 적용** 버튼을 눌러주세요.")
     st.stop()
 
 checklist_result_dict = st.session_state["prelaunch_llm_result"]
@@ -1592,56 +1690,39 @@ if checklist_table_df.empty:
     st.stop()
 
 
+
 # ============================================================
 # 결과 출력
 # ============================================================
 st.divider()
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-    [
-        "📝 리포트",
-        "📋 체크리스트",
-        "📊 반복 이슈 근거",
-        "✅ 생성 결과 점검",
-        "🏷️ 태그 DNA",
-        "🎮 매칭 게임",
-    ]
-)
-
-
-# ------------------------------------------------------------
-# Tab 1. LLM 리포트
-# ------------------------------------------------------------
-with tab1:
-    st.subheader("출시 전 체크리스트 생성 리포트")
-    st.markdown(report_markdown)
-
-    report_bytes = report_markdown.encode("utf-8-sig")
-    st.download_button(
-        label="리포트 Markdown 다운로드",
-        data=report_bytes,
-        file_name="prelaunch_checklist_report.md",
-        mime="text/markdown",
+if show_detail_sections:
+    tab_checklist, tab_evidence, tab_reference = st.tabs(
+        [
+            "📋 체크리스트",
+            "📊 근거 보기",
+            "✅ 검증·참고",
+        ]
     )
+else:
+    (tab_checklist,) = st.tabs(["📋 체크리스트"])
 
 
 # ------------------------------------------------------------
-# Tab 2. 체크리스트
+# Tab 1. 체크리스트
 # ------------------------------------------------------------
-with tab2:
-    st.subheader("출시 전 개발 체크리스트")
-
+with tab_checklist:
     render_section_lead(
-        "점검 카드를 필터로 좁혀 확인합니다",
-        "각 카드는 유사 게임 리뷰에서 반복된 이슈를 개발자가 바로 확인할 수 있는 질문으로 바꾼 결과입니다. 점검 유형, 점검 우선도, 이슈 태그를 선택하면 필요한 카드만 바로 확인할 수 있습니다.",
+        "점검 카드를 필터로 좁혀 확인합니다.",
+        "각 카드는 유사 게임 리뷰에서 반복된 이슈를 개발자가 바로 확인할 수 있는 질문으로 바꾼 결과입니다.  \n"
+        "점검 유형, 점검 우선도, 이슈 태그를 선택하면 필요한 카드만 바로 확인할 수 있습니다.",
     )
 
     render_checklist_overview(checklist_table_df, evidence_df=selected_evidence)
 
     st.divider()
-
-    st.markdown("#### 필터 기준 안내")
-    render_prelaunch_filter_guide()
+    with st.expander("필터 기준 안내 보기", expanded=False):
+        render_prelaunch_filter_guide()
 
     st.markdown("#### 점검 카드 필터")
     filter_col1, filter_col2, filter_col3 = st.columns(3)
@@ -1649,16 +1730,6 @@ with tab2:
     filtered_checklist = checklist_table_df.copy()
 
     with filter_col1:
-        direction_options = ["전체", "확인 필요 요소", "확인 요소", "강화 요소", "참고 요소"]
-        selected_direction_display = st.selectbox(
-            "점검 유형",
-            options=direction_options,
-            key="prelaunch_checklist_direction_filter",
-            help=PRELAUNCH_FILTER_HELP["check_type"],
-        )
-        selected_direction_filter = _direction_raw(selected_direction_display)
-
-    with filter_col2:
         priority_options = ["전체", "우선 점검", "추가 검토", "참고"]
         selected_priority_display = st.selectbox(
             "점검 우선도",
@@ -1667,6 +1738,16 @@ with tab2:
             help=PRELAUNCH_FILTER_HELP["priority"],
         )
         selected_priority_filter = _priority_raw(selected_priority_display)
+
+    with filter_col2:
+        direction_options = ["전체", "확인 필요 요소", "확인 요소", "강화 요소", "참고 요소"]
+        selected_direction_display = st.selectbox(
+            "점검 유형",
+            options=direction_options,
+            key="prelaunch_checklist_direction_filter",
+            help=PRELAUNCH_FILTER_HELP["check_type"],
+        )
+        selected_direction_filter = _direction_raw(selected_direction_display)
 
     with filter_col3:
         issue_tag_options = _available_issue_tag_options(checklist_table_df, issue_col="근거 이슈")
@@ -1694,21 +1775,6 @@ with tab2:
             filtered_checklist["근거 이슈"].astype(str).isin(selected_checklist_issue_tags)
         ]
 
-    total_count = len(filtered_checklist)
-    high_count = int((filtered_checklist["우선순위"] == "상").sum()) if "우선순위" in filtered_checklist.columns else 0
-    mid_count = int((filtered_checklist["우선순위"] == "중").sum()) if "우선순위" in filtered_checklist.columns else 0
-    low_count = int((filtered_checklist["우선순위"] == "하").sum()) if "우선순위" in filtered_checklist.columns else 0
-
-    summary_cols = st.columns(4)
-    with summary_cols[0]:
-        render_metric_card("현재 표시된 항목", f"{total_count:,}개", "선택한 필터에 해당하는 점검 항목")
-    with summary_cols[1]:
-        render_metric_card("우선 점검", f"{high_count:,}개", "출시 전에 우선 점검할 항목")
-    with summary_cols[2]:
-        render_metric_card("추가 검토", f"{mid_count:,}개", "조건에 따라 추가로 확인할 항목")
-    with summary_cols[3]:
-        render_metric_card("참고", f"{low_count:,}개", "후순위로 참고할 항목")
-
     st.caption(
         f"현재 선택한 필터에 해당하는 체크리스트 항목: {len(filtered_checklist):,}개 / 전체 {len(checklist_table_df):,}개"
     )
@@ -1719,7 +1785,6 @@ with tab2:
         render_wrapped_table(filtered_checklist, height_px=520)
 
     csv = filtered_checklist.to_csv(index=False).encode("utf-8-sig")
-
     st.download_button(
         label="체크리스트 CSV 다운로드",
         data=csv,
@@ -1729,200 +1794,168 @@ with tab2:
 
 
 # ------------------------------------------------------------
-# Tab 3. 근거 데이터
+# Tab 2. 근거 보기
 # ------------------------------------------------------------
-with tab3:
-    st.subheader("유사 게임에서 자주 언급된 이슈")
-
-    st.markdown(
-        """
-        이 표는 체크리스트 작성에 사용된 반복 이슈 목록입니다.  
-        입력 조건과 유사한 게임들의 출시 초기 리뷰에서 어떤 요소가 강점으로 언급됐고, 어떤 요소가 확인 필요 항목으로 반복됐는지 확인할 수 있습니다.
-        """
-    )
-
-    filter_col1, filter_col2, filter_col3 = st.columns(3)
-
-    evidence_view = selected_evidence.copy()
-
-    with filter_col1:
-        direction_order_raw = ["리스크 요소", "확인 요소", "강화 요소", "참고 요소"]
-        direction_options = ["전체", "확인 필요 요소", "확인 요소", "강화 요소", "참고 요소"]
-
-        selected_direction_display = st.selectbox(
-            "점검 유형",
-            direction_options,
-            key="prelaunch_direction_filter",
-            help=PRELAUNCH_FILTER_HELP["check_type"],
-        )
-        selected_direction_filter = _direction_raw(selected_direction_display)
-
-    with filter_col2:
-        priority_order_raw = ["상", "중", "하"]
-        priority_options = ["전체", "우선 점검", "추가 검토", "참고"]
-
-        selected_priority_display = st.selectbox(
-            "점검 우선도",
-            priority_options,
-            key="prelaunch_priority_filter",
-            help=PRELAUNCH_FILTER_HELP["priority"],
-        )
-        selected_priority_filter = _priority_raw(selected_priority_display)
-
-    with filter_col3:
-        issue_tag_options = (
-            sorted(selected_evidence["issue_name_kor"].dropna().astype(str).unique().tolist())
-            if "issue_name_kor" in selected_evidence.columns
-            else []
-        )
-        selected_issue_tags = st.multiselect(
-            "이슈 태그",
-            options=issue_tag_options,
-            default=[],
-            key="prelaunch_issue_tag_filter",
-            help=PRELAUNCH_FILTER_HELP["issue_tag"],
-            placeholder="이슈 태그를 선택해주세요",
+if show_detail_sections:
+    with tab_evidence:
+        render_section_lead(
+            "체크리스트가 만들어진 근거를 확인합니다.",
+            "이 탭은 입력 조건과 유사한 게임들의 출시 초기 리뷰에서 어떤 이슈가 반복되었는지 보여줍니다.    \n"
+            "그래프와 표는 체크리스트의 우선 점검 항목이 왜 나왔는지 확인하는 용도로 사용합니다.",
         )
 
-    if selected_direction_filter != "전체" and "issue_direction" in evidence_view.columns:
-        evidence_view = evidence_view[
-            evidence_view["issue_direction"].astype(str) == selected_direction_filter
-        ]
+        with st.expander("유사 게임에서 자주 언급된 이슈 보기", expanded=False):
+            st.info(
+                "입력 조건과 유사한 게임들의 출시 초기 리뷰에서 반복적으로 언급된 이슈를 요약합니다.    \n"
+                "어떤 항목이 체크리스트의 우선 점검 항목으로 연결되었는지 그래프와 지표로 확인할 수 있습니다."
+            )
+            render_evidence_overview(selected_evidence)
 
-    if selected_priority_filter != "전체" and "priority_level" in evidence_view.columns:
-        evidence_view = evidence_view[
-            evidence_view["priority_level"].astype(str) == selected_priority_filter
-        ]
+        with st.expander("반복 이슈 근거 표 보기", expanded=False):
+            st.info(
+                "체크리스트 생성에 사용된 반복 이슈 근거를 표로 확인합니다.     \n"
+                "점검 우선도, 점검 유형, 이슈 태그를 기준으로 필터링하면서 어떤 근거가 카드에 반영되었는지 볼 수 있습니다."
+            )
+            filter_col1, filter_col2, filter_col3 = st.columns(3)
 
-    if selected_issue_tags and "issue_name_kor" in evidence_view.columns:
-        evidence_view = evidence_view[
-            evidence_view["issue_name_kor"].astype(str).isin(selected_issue_tags)
-        ]
+            evidence_view = selected_evidence.copy()
 
-    st.caption(f"표시 중인 근거 데이터: {len(evidence_view):,}행 / 전체 {len(selected_evidence):,}행")
+            with filter_col1:
+                priority_options = ["전체", "우선 점검", "추가 검토", "참고"]
+                selected_priority_display = st.selectbox(
+                    "점검 우선도",
+                    priority_options,
+                    key="prelaunch_priority_filter",
+                    help=PRELAUNCH_FILTER_HELP["priority"],
+                )
+                selected_priority_filter = _priority_raw(selected_priority_display)
 
-    evidence_display_df = make_evidence_display_df(evidence_view)
+            with filter_col2:
+                direction_options = ["전체", "확인 필요 요소", "확인 요소", "강화 요소", "참고 요소"]
+                selected_direction_display = st.selectbox(
+                    "점검 유형",
+                    direction_options,
+                    key="prelaunch_direction_filter",
+                    help=PRELAUNCH_FILTER_HELP["check_type"],
+                )
+                selected_direction_filter = _direction_raw(selected_direction_display)
 
-    render_wrapped_table(evidence_display_df, height_px=560)
+            with filter_col3:
+                issue_tag_options = (
+                    sorted(selected_evidence["issue_name_kor"].dropna().astype(str).unique().tolist())
+                    if "issue_name_kor" in selected_evidence.columns
+                    else []
+                )
+                selected_issue_tags = st.multiselect(
+                    "이슈 태그",
+                    options=issue_tag_options,
+                    default=[],
+                    key="prelaunch_issue_tag_filter",
+                    help=PRELAUNCH_FILTER_HELP["issue_tag"],
+                    placeholder="이슈 태그를 선택해주세요",
+                )
 
-    evidence_csv = evidence_display_df.to_csv(index=False).encode("utf-8-sig")
+            if selected_direction_filter != "전체" and "issue_direction" in evidence_view.columns:
+                evidence_view = evidence_view[
+                    evidence_view["issue_direction"].astype(str) == selected_direction_filter
+                ]
 
-    st.download_button(
-        label="근거 데이터 CSV 다운로드",
-        data=evidence_csv,
-        file_name="prelaunch_selected_evidence.csv",
-        mime="text/csv",
-    )
+            if selected_priority_filter != "전체" and "priority_level" in evidence_view.columns:
+                evidence_view = evidence_view[
+                    evidence_view["priority_level"].astype(str) == selected_priority_filter
+                ]
+
+            if selected_issue_tags and "issue_name_kor" in evidence_view.columns:
+                evidence_view = evidence_view[
+                    evidence_view["issue_name_kor"].astype(str).isin(selected_issue_tags)
+                ]
+
+            st.caption(f"표시 중인 근거 데이터: {len(evidence_view):,}행 / 전체 {len(selected_evidence):,}행")
+            evidence_display_df = make_evidence_display_df(evidence_view)
+            render_wrapped_table(evidence_display_df, height_px=560)
+
+            evidence_csv = evidence_display_df.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                label="근거 데이터 CSV 다운로드",
+                data=evidence_csv,
+                file_name="prelaunch_selected_evidence.csv",
+                mime="text/csv",
+            )
+
+        with st.expander("조건에 맞는 게임 예시 보기", expanded=False):
+            st.info(
+                "현재 선택한 장르, 가격대, Steam 태그, 플레이 방식 조건에 매칭된 유사 게임 예시입니다.  \n"
+                "체크리스트가 어떤 게임군의 리뷰를 참고해 만들어졌는지 확인하는 용도로 사용합니다."
+            )
+            game_display_cols = [
+                "appid",
+                "game_name",
+                "genres_text",
+                "price_group",
+                "top_steam_tags_text",
+                "play_style",
+                "review_count",
+                "llm_positive_ratio",
+                "llm_negative_ratio",
+                "high_urgency_ratio",
+            ]
+            game_display_cols = [col for col in game_display_cols if col in matched_games.columns]
+            game_column_rename_map = {
+                "appid": "앱 ID",
+                "game_name": "게임명",
+                "genres_text": "장르",
+                "price_group": "가격대",
+                "top_steam_tags_text": "Steam 태그",
+                "play_style": "플레이 방식",
+                "review_count": "분석 리뷰 수",
+                "llm_positive_ratio": "긍정 비율(%)",
+                "llm_negative_ratio": "부정 비율(%)",
+                "high_urgency_ratio": "High urgency 비율(%)",
+            }
+            matched_games_display = (
+                matched_games[game_display_cols]
+                .head(200)
+                .rename(columns=game_column_rename_map)
+            )
+            render_wrapped_table(matched_games_display, height_px=560)
+            matched_csv = matched_games[game_display_cols].to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                label="매칭 게임 CSV 다운로드",
+                data=matched_csv,
+                file_name="prelaunch_matched_games.csv",
+                mime="text/csv",
+            )
 
 
 # ------------------------------------------------------------
-# Tab 4. 검증 결과
+# Tab 3. 검증·참고
 # ------------------------------------------------------------
-with tab4:
-    st.subheader("생성 결과 점검")
+if show_detail_sections:
+    with tab_reference:
+        render_section_lead(
+            "체크리스트 생성 결과와 분류 기준을 확인합니다.",
+            "이 탭에서는 생성된 체크리스트가 근거 데이터의 점검 우선도와 점검 유형 기준을 유지했는지 확인합니다.    \n필요할 때 점검 우선도와 점검 유형 분류 기준도 함께 참고할 수 있습니다.",
+        )
 
-    render_prelaunch_validation_guide(validation_df)
+        with st.expander("생성 결과 점검 보기", expanded=False):
+            render_prelaunch_validation_guide(validation_df)
+            st.markdown("#### 검증 결과표")
+            st.caption(
+                "생성된 체크리스트가 근거 데이터의 점검 우선도를 그대로 사용했는지 확인한 결과입니다. "
+                "확인 필요 항목이 있을 경우, 최종 표에서는 근거 데이터 기준으로 보정합니다."
+            )
+            render_wrapped_table(validation_df, height_px=360)
 
-    st.markdown("#### 검증 결과표")
-    st.caption(
-        "생성된 체크리스트가 근거 데이터의 점검 우선도를 그대로 사용했는지 확인한 결과입니다. "
-        "확인 필요 항목이 있을 경우, 최종 표에서는 근거 데이터 기준으로 보정합니다."
-    )
-    render_wrapped_table(validation_df, height_px=360)
-
-    st.divider()
-
-    st.subheader("체크리스트 분류 기준")
-
-    st.markdown(
-        """
-        아래 기준은 생성 결과 점검표와 체크리스트 카드를 해석하기 위한 안내입니다.  
-        화면에는 내부 기준값인 상·중·하 대신 **우선 점검 / 추가 검토 / 참고**로 표시합니다.
-        """
-    )
-
-    priority_guide_df, direction_guide_df = make_prelaunch_classification_guide_tables()
-
-    guide_col1, guide_col2 = st.columns(2)
-
-    with guide_col1:
-        st.markdown("#### 점검 우선도 기준")
-        render_wrapped_table(priority_guide_df, height_px=270)
-
-    with guide_col2:
-        st.markdown("#### 점검 유형 기준")
-        render_wrapped_table(direction_guide_df, height_px=270)
-
-
-# ------------------------------------------------------------
-# Tab 5. Steam 태그 DNA
-# ------------------------------------------------------------
-with tab5:
-    st.subheader("Steam 태그 DNA 참고 정보")
-
-    st.markdown(
-        """
-        사용자가 선택한 Steam 태그가 성과 상위권 게임에서 얼마나 나타나는지 확인하는 참고 정보입니다.  
-        이 정보는 체크리스트의 직접 근거가 아니라, 태그 조건 해석을 돕는 보조 자료입니다.
-        """
-    )
-
-    if tag_dna_summary.empty:
-        st.info("Steam 태그를 선택하지 않았거나, 태그 DNA 참고 데이터를 만들 수 없습니다.")
-    else:
-        render_wrapped_table(tag_dna_summary, height_px=420)
-
-
-# ------------------------------------------------------------
-# Tab 6. 매칭 게임
-# ------------------------------------------------------------
-with tab6:
-    st.subheader("조건에 맞는 게임 예시")
-
-    game_display_cols = [
-        "appid",
-        "game_name",
-        "genres_text",
-        "price_group",
-        "top_steam_tags_text",
-        "play_style",
-        "review_count",
-        "llm_positive_ratio",
-        "llm_negative_ratio",
-        "high_urgency_ratio",
-    ]
-
-    game_display_cols = [
-        col for col in game_display_cols
-        if col in matched_games.columns
-    ]
-
-    game_column_rename_map = {
-        "appid": "앱 ID",
-        "game_name": "게임명",
-        "genres_text": "장르",
-        "price_group": "가격대",
-        "top_steam_tags_text": "Steam 태그",
-        "play_style": "플레이 방식",
-        "review_count": "분석 리뷰 수",
-        "llm_positive_ratio": "긍정 비율(%)",
-        "llm_negative_ratio": "부정 비율(%)",
-        "high_urgency_ratio": "High urgency 비율(%)",
-    }
-
-    matched_games_display = (
-        matched_games[game_display_cols]
-        .head(200)
-        .rename(columns=game_column_rename_map)
-    )
-
-    render_wrapped_table(matched_games_display, height_px=560)
-
-    matched_csv = matched_games[game_display_cols].to_csv(index=False).encode("utf-8-sig")
-
-    st.download_button(
-        label="매칭 게임 CSV 다운로드",
-        data=matched_csv,
-        file_name="prelaunch_matched_games.csv",
-        mime="text/csv",
-    )
+        with st.expander("체크리스트 분류 기준 보기", expanded=False):
+            st.info(
+                "체크리스트 카드의 점검 우선도와 점검 유형을 어떻게 해석해야 하는지 정리한 기준표입니다.    \n"
+                "내부 기준값은 화면에서 우선 점검, 추가 검토, 참고로 바꾸어 표시합니다."
+            )
+            priority_guide_df, direction_guide_df = make_prelaunch_classification_guide_tables()
+            guide_col1, guide_col2 = st.columns(2)
+            with guide_col1:
+                st.markdown("#### 점검 우선도 기준")
+                render_wrapped_table(priority_guide_df, height_px=270)
+            with guide_col2:
+                st.markdown("#### 점검 유형 기준")
+                render_wrapped_table(direction_guide_df, height_px=270)

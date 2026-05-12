@@ -47,6 +47,41 @@ def inject_dashboard_style() -> None:
             min-height: 112px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.12);
         }
+        .dash-card.tone-high {
+            background: linear-gradient(135deg, rgba(239,68,68,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(239,68,68,0.46);
+        }
+        .dash-card.tone-mid {
+            background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(245,158,11,0.44);
+        }
+        .dash-card.tone-low {
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(255,255,255,0.035));
+            border-color: rgba(59,130,246,0.38);
+        }
+        .dash-card.tone-good {
+            background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(255,255,255,0.035));
+            border-color: rgba(34,197,94,0.38);
+        }
+        .dash-card.tone-info {
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(255,255,255,0.035));
+            border-color: rgba(59,130,246,0.38);
+        }
+        .dash-card.tone-warn {
+            background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(245,158,11,0.44);
+        }
+        .dash-card.tone-danger {
+            background: linear-gradient(135deg, rgba(239,68,68,0.16), rgba(255,255,255,0.035));
+            border-color: rgba(239,68,68,0.46);
+        }
+        .dash-card.tone-high .dash-kpi-value,
+        .dash-card.tone-danger .dash-kpi-value { color: #fca5a5; }
+        .dash-card.tone-mid .dash-kpi-value,
+        .dash-card.tone-warn .dash-kpi-value { color: #fcd34d; }
+        .dash-card.tone-low .dash-kpi-value { color: #93c5fd; }
+        .dash-card.tone-good .dash-kpi-value { color: #86efac; }
+        .dash-card.tone-info .dash-kpi-value { color: #93c5fd; }
         .dash-kpi-value { font-size: 1.95rem; font-weight: 800; line-height: 1.05; margin-bottom: 6px; }
         .dash-kpi-label { font-size: 0.92rem; font-weight: 700; color: rgba(250,250,250,0.92); }
         .dash-kpi-caption { font-size: 0.78rem; color: rgba(250,250,250,0.62); margin-top: 4px; line-height: 1.45; }
@@ -72,9 +107,21 @@ def inject_dashboard_style() -> None:
             padding: 16px 18px;
             margin-bottom: 14px;
         }
-        .ops-card.high { border-left-color: #ef4444; }
-        .ops-card.mid { border-left-color: #f59e0b; }
-        .ops-card.low { border-left-color: #3b82f6; }
+        .ops-card.high {
+            border-color: rgba(239,68,68,0.36);
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(255,255,255,0.035));
+        }
+        .ops-card.mid {
+            border-color: rgba(245,158,11,0.34);
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(255,255,255,0.035));
+        }
+        .ops-card.low {
+            border-color: rgba(59,130,246,0.34);
+            border-left-color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(255,255,255,0.035));
+        }
         .ops-title { font-size: 1.08rem; font-weight: 800; margin-bottom: 8px; }
         .mini-label { font-size: 0.78rem; font-weight: 800; color: rgba(250,250,250,0.58); margin: 12px 0 4px 0; }
         .mini-text { font-size: 0.9rem; line-height: 1.58; color: rgba(250,250,250,0.84); }
@@ -89,11 +136,12 @@ def _html_text(value) -> str:
 
 
 def render_metric_card(label: str, value: str, caption: str = "", tone: str = "neutral") -> None:
-    """요약 KPI 숫자는 의미 색상과 혼동되지 않도록 중립색으로 통일합니다."""
+    """요약 KPI 카드를 출력합니다. tone 값으로 중요도에 따른 색상만 최소 적용합니다."""
+    safe_tone = str(tone) if str(tone) in {"neutral", "high", "mid", "low", "good", "info", "warn", "danger"} else "neutral"
     st.markdown(
         f"""
-        <div class="dash-card">
-            <div class="dash-kpi-value" style="color:#e5e7eb">{_html_text(value)}</div>
+        <div class="dash-card tone-{safe_tone}">
+            <div class="dash-kpi-value">{_html_text(value)}</div>
             <div class="dash-kpi-label">{_html_text(label)}</div>
             <div class="dash-kpi-caption">{_html_text(caption)}</div>
         </div>
@@ -131,6 +179,24 @@ def render_badge(label: str, tone: str = "neutral") -> str:
 
 
 
+def notify_detail_toggle_change(enabled: bool, page_key: str, detail_label: str) -> None:
+    """상세 근거·검증 보기 상태가 바뀔 때 토스트 알림을 띄웁니다."""
+    prev_key = f"{page_key}_detail_toggle_prev"
+    if prev_key in st.session_state and st.session_state[prev_key] != enabled:
+        if enabled:
+            message = f"{detail_label}가 켜졌습니다. 결과 영역에 상세 탭이 추가됩니다."
+            icon = "🔎"
+        else:
+            message = f"{detail_label}가 꺼졌습니다. 핵심 결과만 표시합니다."
+            icon = "✅"
+        try:
+            st.toast(message, icon=icon)
+        except Exception:
+            st.caption(message)
+    st.session_state[prev_key] = enabled
+
+
+
 def _split_tag_values(value) -> list[str]:
     """쉼표/줄바꿈/리스트 형태의 태그 값을 화면 필터용 목록으로 정리합니다."""
     if value is None:
@@ -152,7 +218,7 @@ def _split_tag_values(value) -> list[str]:
     if not text_value or text_value in {"-", "nan", "None"}:
         return []
 
-    parts = re.split(r"[,/|;\n]+", text_value)
+    parts = re.split(r"[,|;\n]+", text_value)
     tags = []
     for part in parts:
         tag = part.strip()
@@ -279,9 +345,9 @@ def render_bar_chart(
     y_col: str,
     x_title: str | None = None,
     y_title: str | None = None,
-    height: int = 300,
+    height: int = 350,
 ) -> None:
-    """축 라벨이 세로로 돌아가지 않도록 Altair 막대그래프를 출력합니다."""
+    """축 라벨이 잘리지 않도록 여백을 확보해 Altair 막대그래프를 출력합니다."""
     if df is None or df.empty or x_col not in df.columns or y_col not in df.columns:
         st.info("표시할 그래프 데이터가 없습니다.")
         return
@@ -290,6 +356,9 @@ def render_bar_chart(
     chart_df[x_col] = chart_df[x_col].fillna("미분류").astype(str)
     chart_df[y_col] = pd.to_numeric(chart_df[y_col], errors="coerce").fillna(0)
 
+    max_value = chart_df[y_col].max()
+    y_max = max_value * 1.15 if max_value > 0 else 1
+
     chart = (
         alt.Chart(chart_df)
         .mark_bar()
@@ -297,19 +366,48 @@ def render_bar_chart(
             x=alt.X(
                 f"{x_col}:N",
                 title=x_title or x_col,
-                axis=alt.Axis(labelAngle=0, labelLimit=180, titleAngle=0, titlePadding=12),
+                axis=alt.Axis(
+                    labelAngle=0,
+                    labelLimit=180,
+                    titleAngle=0,
+                    titlePadding=12,
+                ),
             ),
             y=alt.Y(
                 f"{y_col}:Q",
                 title=y_title or y_col,
-                axis=alt.Axis(titleAngle=0, titleAlign="left", titleAnchor="start", titleX=-42, titleY=-8),
+                scale=alt.Scale(domain=[0, y_max], nice=True),
+                axis=alt.Axis(
+                    titleAngle=0,
+                    titleAlign="left",
+                    titleAnchor="start",
+                    titleX=0,
+                    titleY=-8,
+                    titlePadding=8,
+                    labelPadding=6,
+                ),
+            ),
+            color=alt.condition(
+                alt.FieldOneOfPredicate(field=x_col, oneOf=["우선 점검", "추가 검토", "참고"]),
+                alt.Color(
+                    f"{x_col}:N",
+                    scale=alt.Scale(
+                        domain=["우선 점검", "추가 검토", "참고"],
+                        range=["#ef4444", "#f59e0b", "#3b82f6"],
+                    ),
+                    legend=None,
+                ),
+                alt.value("#60a5fa"),
             ),
             tooltip=[
                 alt.Tooltip(f"{x_col}:N", title=x_title or x_col),
                 alt.Tooltip(f"{y_col}:Q", title=y_title or y_col),
             ],
         )
-        .properties(height=height)
+        .properties(
+            height=height,
+            padding={"top": 18, "left": 8, "right": 8, "bottom": 8},
+        )
     )
 
     st.altair_chart(chart, use_container_width=True)
@@ -685,19 +783,18 @@ def render_postlaunch_validation_guide(validation_df: pd.DataFrame) -> None:
         else:
             result_message = "일부 항목은 근거 데이터 기준으로 다시 확인하거나 보정할 필요가 있습니다."
 
-    render_section_lead(
-        "생성 결과를 근거 데이터 기준으로 다시 확인합니다",
-        "생성된 패치·운영 제안이 사전에 계산된 대응 방식과 점검 우선도를 임의로 바꾸지 않았는지 확인합니다. "
-        "근거 데이터에 없는 이슈가 포함되었는지도 함께 점검하며, 최종 결과 표에는 근거 데이터에서 계산된 기준을 다시 적용합니다.",
+    st.info(
+        "생성 결과가 사전 계산된 대응 방식과 점검 우선도 기준을 유지했는지 확인합니다.      \n"
+        "확인 필요 항목이 있으면 최종 표에서는 근거 데이터 기준으로 보정합니다."
     )
 
     metric_cols = st.columns(3)
     with metric_cols[0]:
-        render_metric_card("검증 항목", f"{validation_count:,}개", "생성 결과와 근거 기준을 비교한 항목")
+        render_metric_card("검증 항목", f"{validation_count:,}개", "생성 결과와 근거 기준을 비교한 항목", tone="info")
     with metric_cols[1]:
-        render_metric_card("통과", f"{passed_count:,}개", "근거 데이터 기준과 일치한 항목")
+        render_metric_card("통과", f"{passed_count:,}개", "근거 데이터 기준과 일치한 항목", tone="good")
     with metric_cols[2]:
-        render_metric_card("확인 필요", f"{warning_count:,}개", "근거 기준과 차이가 있어 확인할 항목")
+        render_metric_card("확인 필요", f"{warning_count:,}개", "근거 기준과 차이가 있어 확인할 항목", tone="high")
 
     st.markdown(
         f"""
@@ -717,26 +814,179 @@ def render_postlaunch_validation_guide(validation_df: pd.DataFrame) -> None:
     )
 
 
-def render_postlaunch_overview(analysis_overview: dict, selected_evidence: pd.DataFrame) -> None:
-    st.header("2. 현재 리뷰 상태 요약")
-    render_section_lead(
-        "현재 리뷰 상태를 먼저 확인합니다",
-        "상단 지표는 분석에 사용한 리뷰 규모, 부정·혼합 반응, Steam 비추천, 긴급 확인 후보를 빠르게 보여줍니다. 아래 반복 이슈 요약은 어떤 문제를 먼저 확인할지 판단하기 위한 보조 근거입니다.",
+
+
+def build_postlaunch_top_issue_chart_df(
+    strategy_df: pd.DataFrame,
+    evidence_df: pd.DataFrame | None = None,
+    top_n: int = 10,
+) -> pd.DataFrame:
+    """패치·운영 제안과 근거 데이터를 연결해 우선 이슈 TOP N 그래프용 데이터를 만듭니다.
+
+    카드 결과에는 리뷰 수가 없을 수 있으므로, 가능하면 근거 데이터의
+    affected_review_count와 rule_priority_hint를 사용합니다. 이 방식은 출시 전
+    체크리스트의 우선 점검 이슈 TOP 10 그래프와 같은 구조입니다.
+    """
+    columns = ["이슈", "관련 리뷰 수", "점검 우선도", "_priority_order"]
+
+    target_issues: list[str] = []
+    if strategy_df is not None and not strategy_df.empty and "이슈" in strategy_df.columns:
+        target_issues = (
+            strategy_df["이슈"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .replace("", pd.NA)
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+    # 1순위: 근거 데이터의 실제 반복 리뷰 수를 사용합니다.
+    if evidence_df is not None and not evidence_df.empty and "issue_name_kor" in evidence_df.columns:
+        work = evidence_df.copy()
+
+        if target_issues:
+            work = work[work["issue_name_kor"].astype(str).isin(target_issues)].copy()
+
+        if not work.empty:
+            count_col = next(
+                (c for c in ["affected_review_count", "관련 리뷰 수", "review_count", "negative_mixed_review_count"] if c in work.columns),
+                None,
+            )
+            if count_col is None:
+                work["관련 리뷰 수"] = 1
+            else:
+                work["관련 리뷰 수"] = pd.to_numeric(work[count_col], errors="coerce").fillna(0)
+
+            priority_col = "rule_priority_hint" if "rule_priority_hint" in work.columns else None
+            if priority_col is None:
+                work["_priority_raw"] = "하"
+            else:
+                work["_priority_raw"] = work[priority_col].fillna("하").astype(str)
+
+            work["_priority_order"] = work["_priority_raw"].map({"상": 1, "중": 2, "하": 3}).fillna(9).astype(int)
+
+            chart_df = (
+                work.groupby("issue_name_kor", as_index=False)
+                .agg({"관련 리뷰 수": "max", "_priority_order": "min"})
+                .rename(columns={"issue_name_kor": "이슈"})
+            )
+            chart_df["점검 우선도"] = chart_df["_priority_order"].map(
+                {1: "우선 점검", 2: "추가 검토", 3: "참고"}
+            ).fillna("참고")
+            chart_df = chart_df.sort_values(
+                ["_priority_order", "관련 리뷰 수"],
+                ascending=[True, False],
+            ).head(top_n)
+            return chart_df[columns]
+
+    # 2순위: 근거 데이터가 없을 때는 카드 결과 자체의 이슈 등장 횟수를 사용합니다.
+    if strategy_df is None or strategy_df.empty or "이슈" not in strategy_df.columns:
+        return pd.DataFrame(columns=columns)
+
+    work = strategy_df.copy()
+    if "우선 검토 수준" not in work.columns:
+        work["우선 검토 수준"] = "하"
+
+    work["관련 리뷰 수"] = 1
+    work["_priority_order"] = work["우선 검토 수준"].map({"상": 1, "중": 2, "하": 3}).fillna(9).astype(int)
+
+    chart_df = (
+        work.groupby("이슈", as_index=False)
+        .agg({"관련 리뷰 수": "sum", "_priority_order": "min"})
     )
+    chart_df["점검 우선도"] = chart_df["_priority_order"].map(
+        {1: "우선 점검", 2: "추가 검토", 3: "참고"}
+    ).fillna("참고")
+    chart_df = chart_df.sort_values(
+        ["_priority_order", "관련 리뷰 수"],
+        ascending=[True, False],
+    ).head(top_n)
+    return chart_df[columns]
+
+
+def render_postlaunch_top_issue_chart(chart_df: pd.DataFrame) -> None:
+    """출시 전 우선 점검 이슈 TOP 10과 같은 형태로 패치·운영 우선 이슈를 출력합니다."""
+    if chart_df is None or chart_df.empty:
+        st.info("표시할 패치·운영 우선 이슈 데이터가 없습니다.")
+        return
+
+    chart = (
+        alt.Chart(chart_df)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "관련 리뷰 수:Q",
+                title="관련 리뷰 수",
+                axis=alt.Axis(labelAngle=0, titleAngle=0, titlePadding=12),
+            ),
+            y=alt.Y(
+                "이슈:N",
+                title="이슈",
+                sort="-x",
+                axis=alt.Axis(
+                    labelAngle=0,
+                    labelLimit=260,
+                    titleAngle=0,
+                    titleAlign="left",
+                    titleAnchor="start",
+                    titleX=-2,
+                    titleY=-10,
+                    titlePadding=10,
+                ),
+            ),
+            color=alt.Color(
+                "점검 우선도:N",
+                scale=alt.Scale(
+                    domain=["우선 점검", "추가 검토", "참고"],
+                    range=["#ef4444", "#f59e0b", "#3b82f6"],
+                ),
+                legend=None,
+            ),
+            tooltip=[
+                alt.Tooltip("이슈:N", title="이슈"),
+                alt.Tooltip("점검 우선도:N", title="점검 우선도"),
+                alt.Tooltip("관련 리뷰 수:Q", title="관련 리뷰 수"),
+            ],
+        )
+        .properties(height=340, padding={"top": 8, "left": 8, "right": 8, "bottom": 8})
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+def render_postlaunch_overview(
+    analysis_overview: dict,
+    selected_evidence: pd.DataFrame,
+    show_header: bool = True,
+    show_lead: bool = True,
+) -> None:
+    if show_header:
+        st.header("2. 현재 리뷰 상태 요약")
+
+    if show_lead:
+        render_section_lead(
+            "현재 리뷰 상태를 먼저 확인합니다",
+            "상단 지표는 분석에 사용한 리뷰 규모, 부정·혼합 반응, Steam 비추천, 긴급 확인 후보를 빠르게 보여줍니다. 아래 반복 이슈 요약은 어떤 문제를 먼저 확인할지 판단하기 위한 보조 근거입니다.",
+        )
+    else:
+        st.caption(
+            "분석에 사용한 리뷰 규모, 부정·혼합 반응, Steam 비추천, 긴급 확인 후보와 반복 이슈를 함께 요약합니다."
+        )
 
     metric1, metric2, metric3, metric4, metric5 = st.columns(5)
 
     with metric1:
-        render_metric_card("분석 리뷰", f"{analysis_overview['review_count']:,}개", "분석에 사용한 리뷰")
+        render_metric_card("분석 리뷰", f"{analysis_overview['review_count']:,}개", "분석에 사용한 리뷰", tone="info")
 
     with metric2:
-        render_metric_card("발견된 이슈 태그", f"{analysis_overview['issue_tag_count']:,}개", "리뷰에서 추출된 이슈")
+        render_metric_card("발견된 이슈 태그", f"{analysis_overview['issue_tag_count']:,}개", "리뷰에서 추출된 이슈", tone="info")
 
     with metric3:
         render_metric_card(
             "부정·혼합 반응",
             f"{analysis_overview['llm_negative_mixed_review_count']:,}개",
             f"전체 대비 {analysis_overview['llm_negative_mixed_rate'] * 100:.1f}%",
+            tone="warn",
         )
 
     with metric4:
@@ -744,6 +994,7 @@ def render_postlaunch_overview(analysis_overview: dict, selected_evidence: pd.Da
             "Steam 비추천",
             f"{analysis_overview['steam_negative_review_count']:,}개",
             f"전체 대비 {analysis_overview['steam_negative_rate'] * 100:.1f}%",
+            tone="high",
         )
 
     with metric5:
@@ -751,6 +1002,7 @@ def render_postlaunch_overview(analysis_overview: dict, selected_evidence: pd.Da
             "긴급 확인 후보",
             f"{analysis_overview['high_urgency_review_count']:,}개",
             f"전체 대비 {analysis_overview['high_urgency_rate'] * 100:.1f}%",
+            tone="high",
         )
 
     st.caption(
@@ -797,26 +1049,104 @@ def render_postlaunch_overview(analysis_overview: dict, selected_evidence: pd.Da
         render_horizontal_bar_chart(top_issue_df, "이슈", "관련 리뷰 수", "이슈", "관련 리뷰 수", height=360)
 
 
-def render_strategy_cards(strategy_df: pd.DataFrame) -> pd.DataFrame:
-    st.subheader("패치·운영 우선 점검 항목")
+def render_strategy_cards(
+    strategy_df: pd.DataFrame,
+    evidence_df: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """패치·운영 제안 탭을 KPI → 그래프 → 필터 기준 안내 → 필터 → 카드 순서로 출력합니다."""
     render_section_lead(
-        "우선 점검할 이슈와 대응 방향을 카드로 확인합니다",
-        "대응 방식, 점검 우선도, 이슈 태그로 필터링하면서 핵심 이슈와 근거 요약, 패치·운영 방향을 빠르게 확인할 수 있습니다. 세부 실행안과 주의사항은 카드 아래 접기 영역에서 확인합니다.",
+        "우선 점검할 이슈와 대응 방향을 카드로 확인합니다.",
+        "아래 요약과 그래프는 전체 패치·운영 제안 항목을 기준으로 먼저 보여줍니다.      \n"
+        "이후 점검 우선도, 대응 방식, 이슈 태그로 필요한 카드만 좁혀 확인할 수 있습니다.",
     )
 
-    render_postlaunch_filter_guide()
+    # --------------------------------------------------------
+    # 1) 전체 기준 KPI
+    # --------------------------------------------------------
+    total_count = len(strategy_df)
+    high_count = int((strategy_df["우선 검토 수준"].astype(str) == "상").sum()) if "우선 검토 수준" in strategy_df.columns else 0
+    mid_count = int((strategy_df["우선 검토 수준"].astype(str) == "중").sum()) if "우선 검토 수준" in strategy_df.columns else 0
+    low_count = int((strategy_df["우선 검토 수준"].astype(str) == "하").sum()) if "우선 검토 수준" in strategy_df.columns else 0
 
+    summary_cols = st.columns(4)
+    with summary_cols[0]:
+        render_metric_card("전체 제안 항목", f"{total_count:,}개", "생성된 패치·운영 제안 항목", tone="neutral")
+    with summary_cols[1]:
+        render_metric_card("우선 점검", f"{high_count:,}개", "패치·운영에서 먼저 확인할 항목", tone="high")
+    with summary_cols[2]:
+        render_metric_card("추가 검토", f"{mid_count:,}개", "조건에 따라 추가로 확인할 항목", tone="mid")
+    with summary_cols[3]:
+        render_metric_card("참고", f"{low_count:,}개", "후순위로 참고할 항목", tone="low")
+
+    st.caption(
+        "아래 그래프는 전체 패치·운영 제안 항목의 점검 우선도와 주요 이슈 분포를 보여줍니다. "
+    )
+
+    # --------------------------------------------------------
+    # 2) 전체 기준 그래프
+    # --------------------------------------------------------
+    priority_chart_source = strategy_df.copy()
+    if "우선 검토 수준" in priority_chart_source.columns:
+        priority_chart_source["점검 우선도"] = priority_chart_source["우선 검토 수준"].apply(_priority_display)
+
+    priority_chart_df = _count_chart_df(
+        priority_chart_source,
+        column="점검 우선도",
+        order=["우선 점검", "추가 검토", "참고"],
+        label="점검 우선도",
+    )
+    top_issue_chart_df = build_postlaunch_top_issue_chart_df(strategy_df, evidence_df=evidence_df, top_n=10)
+
+    graph_col1, graph_col2 = st.columns(2)
+    with graph_col1:
+        st.caption("점검 우선도 분포")
+        st.caption("전체 제안 항목이 우선 점검, 추가 검토, 참고 중 어디에 많이 분포하는지 보여줍니다.")
+        render_bar_chart(
+            priority_chart_df,
+            x_col="점검 우선도",
+            y_col="건수",
+            x_title="점검 우선도",
+            y_title="건수",
+            height=320,
+        )
+    with graph_col2:
+        st.caption("패치·운영 우선 이슈 TOP 10")
+        st.caption("리뷰에서 반복적으로 언급된 이슈 중 패치·운영에서 먼저 확인할 항목입니다.")
+        render_postlaunch_top_issue_chart(top_issue_chart_df)
+
+    st.divider()
+
+    # --------------------------------------------------------
+    # 3) 필터 기준 안내
+    # --------------------------------------------------------
+    with st.expander("필터 기준 안내 보기", expanded=False):
+        render_postlaunch_filter_guide()
+
+    # --------------------------------------------------------
+    # 4) 카드 필터
+    # --------------------------------------------------------
+    st.markdown("#### 패치·운영 카드 필터")
     filter_col1, filter_col2, filter_col3 = st.columns(3)
 
     with filter_col1:
-        action_options = ["전체"] + sorted(strategy_df["대응 구분"].dropna().astype(str).unique().tolist())
-        selected_action = st.selectbox("대응 방식", action_options, key="postlaunch_strategy_action_filter", help=POSTLAUNCH_FILTER_HELP["response_type"])
-
-    with filter_col2:
         raw_priority_values = strategy_df["우선 검토 수준"].astype(str).unique().tolist()
         priority_options = ["전체"] + [_priority_display(p) for p in ["상", "중", "하"] if p in raw_priority_values]
-        selected_priority_display = st.selectbox("점검 우선도", priority_options, key="postlaunch_strategy_priority_filter", help=POSTLAUNCH_FILTER_HELP["priority"])
+        selected_priority_display = st.selectbox(
+            "점검 우선도",
+            priority_options,
+            key="postlaunch_strategy_priority_filter",
+            help=POSTLAUNCH_FILTER_HELP["priority"],
+        )
         selected_priority = _priority_raw(selected_priority_display)
+
+    with filter_col2:
+        action_options = ["전체"] + sorted(strategy_df["대응 구분"].dropna().astype(str).unique().tolist())
+        selected_action = st.selectbox(
+            "대응 방식",
+            action_options,
+            key="postlaunch_strategy_action_filter",
+            help=POSTLAUNCH_FILTER_HELP["response_type"],
+        )
 
     with filter_col3:
         issue_tag_options = _available_strategy_issue_tag_options(strategy_df)
@@ -842,21 +1172,13 @@ def render_strategy_cards(strategy_df: pd.DataFrame) -> pd.DataFrame:
             card_df.apply(lambda row: _row_has_selected_strategy_issue_tag(row, selected_issue_tags), axis=1)
         ]
 
-    count_col1, count_col2, count_col3 = st.columns(3)
-    high_count = int((card_df["우선 검토 수준"].astype(str) == "상").sum()) if "우선 검토 수준" in card_df.columns else 0
-    immediate_count = int((card_df["대응 구분"].astype(str) == "즉시 확인").sum()) if "대응 구분" in card_df.columns else 0
-    with count_col1:
-        render_metric_card("현재 표시된 이슈", f"{len(card_df):,}개", "선택한 필터에 해당하는 항목")
-    with count_col2:
-        render_metric_card("우선 점검 항목", f"{high_count:,}개", "반복성과 부정 맥락이 큰 항목")
-    with count_col3:
-        render_metric_card("즉시 확인 항목", f"{immediate_count:,}개", "QA·재현 테스트가 먼저 필요한 항목")
-
     st.caption(
-        "즉시 확인 항목은 버그, 진행 불가, 재현 테스트 필요처럼 바로 확인해야 할 가능성이 큰 이슈입니다. "
-        "우선 점검 항목은 반복성과 부정 맥락이 커서 패치 검토가 필요한 항목입니다."
+        f"현재 선택한 필터에 해당하는 패치·운영 제안 항목: {len(card_df):,}개 / 전체 {len(strategy_df):,}개"
     )
 
+    # --------------------------------------------------------
+    # 5) 카드 목록
+    # --------------------------------------------------------
     if card_df.empty:
         st.info("현재 필터 조건에 맞는 패치·운영 제안이 없습니다.")
         return card_df
@@ -867,8 +1189,8 @@ def render_strategy_cards(strategy_df: pd.DataFrame) -> pd.DataFrame:
         issue_badges = [render_badge(tag, "neutral") for tag in _strategy_issue_tag_values(row)[:3]]
         badges = "".join(
             [
-                render_badge(row.get("대응 구분", "-"), "neutral"),
                 render_badge(_priority_display(priority), p_class),
+                render_badge(row.get("대응 구분", "-"), "neutral"),
                 *issue_badges,
             ]
         )
@@ -886,9 +1208,9 @@ def render_strategy_cards(strategy_df: pd.DataFrame) -> pd.DataFrame:
             unsafe_allow_html=True,
         )
 
-        with st.expander("세부 실행안 · 기대 효과 · 주의사항 보기", expanded=False):
+        with st.expander("실행 방법과 기대 효과·주의사항 보기", expanded=False):
             if row.get("세부 실행안", ""):
-                st.markdown("**세부 실행안**")
+                st.markdown("**권장 실행 방법**")
                 st.write(row.get("세부 실행안", ""))
             detail_col1, detail_col2 = st.columns(2)
             with detail_col1:
@@ -897,7 +1219,7 @@ def render_strategy_cards(strategy_df: pd.DataFrame) -> pd.DataFrame:
                     st.write(row.get("기대 효과", ""))
             with detail_col2:
                 if row.get("주의사항", ""):
-                    st.markdown("**주의사항**")
+                    st.markdown("**확인 전 주의사항**")
                     st.info(row.get("주의사항", ""))
 
     return card_df
@@ -910,29 +1232,36 @@ inject_dashboard_style()
 
 st.title("🛠️ 출시 후 패치·운영 전략")
 
-st.markdown(
-    """
+render_section_lead(
+    "이 분석으로 할 수 있는 것",
+    """- 현재 리뷰에서 반복되는 불만과 강점을 확인할 수 있습니다.
+- QA로 먼저 재현해야 할 문제와 단기 개선 항목을 구분할 수 있습니다.
+- 패치 회의나 운영 회의에서 사용할 우선순위 초안을 만들 수 있습니다.""",
+)
+
+render_section_lead(
+    "사용 흐름",
+    """1. 분석할 게임을 선택합니다.
+2. [패치·운영 방향 생성] 버튼을 눌러 리뷰 기반 제안 카드를 생성합니다.
+3. 점검 우선도, 대응 방식, 이슈 태그로 먼저 볼 항목을 확인합니다.
+4. 필요한 경우 사이드바의 [상세 근거·검증 보기]를 켜서 반복 이슈와 리뷰 샘플을 확인합니다.""",
+)
+
+with st.expander("이 페이지 설명 자세히 보기", expanded=False):
+    st.markdown(
+        """
 이 페이지는 이미 출시된 게임의 **리뷰 기반 패치·운영 우선순위**를 정리하기 위한 화면입니다.
 
 분석할 게임을 선택하면  
 Steam 리뷰에서 유저가 긍정적으로 평가한 요소와 반복적으로 불만을 제기한 요소를 확인하고,  
 패치나 운영에서 먼저 점검해야 할 항목을 정리합니다.
-"""
-)
 
-st.markdown(
-    """
-    **이럴 때 사용합니다**
-    - 출시 후 유저들이 어떤 부분에서 불만을 느끼는지 빠르게 확인하고 싶을 때
-    - 버그, 밸런스, 콘텐츠, UI·UX, 최적화 문제 중 무엇을 먼저 봐야 할지 정리하고 싶을 때
-    - 패치 회의나 운영 회의에서 사용할 개선 우선순위 초안이 필요할 때
-    """
-)
-
-render_section_lead(
-    "이 화면은 출시 후 패치·운영 우선순위를 정리합니다",
-    "1. 분석할 게임을 선택합니다.\n2. Steam 리뷰에서 반복된 긍정·부정 이슈를 확인합니다.\n3. 즉시 확인할 문제와 단기 개선 항목을 정리합니다.",
-)
+**이럴 때 사용합니다**
+- 출시 후 유저들이 어떤 부분에서 불만을 느끼는지 빠르게 확인하고 싶을 때
+- 버그, 밸런스, 콘텐츠, UI·UX, 최적화 문제 중 무엇을 먼저 봐야 할지 정리하고 싶을 때
+- 패치 회의나 운영 회의에서 사용할 개선 우선순위 초안이 필요할 때
+        """
+    )
 
 st.divider()
 
@@ -960,6 +1289,17 @@ with st.sidebar:
         "분석할 게임을 선택하면 Steam 리뷰에서 반복된 이슈를 바탕으로 "
         "패치·운영 우선순위와 대응 방향을 확인할 수 있습니다."
     )
+    show_detail_sections = st.checkbox(
+        "상세 근거·검증 보기",
+        value=False,
+        help="기본 화면은 패치·운영 제안만 보여줍니다. 켜면 근거 보기와 리뷰·검증 탭을 추가로 확인할 수 있습니다.",
+    )
+
+notify_detail_toggle_change(
+    enabled=show_detail_sections,
+    page_key="postlaunch",
+    detail_label="상세 근거·검증 보기",
+)
 
 # ============================================================
 # 데이터 로드
@@ -1004,7 +1344,7 @@ if show_debug_info:
 
 
 # ============================================================
-# 게임 선택
+# 게임 선택 및 제안 생성
 # ============================================================
 game_options = get_game_options(review_base, evidence_base)
 
@@ -1012,13 +1352,54 @@ if game_options.empty:
     st.error("선택 가능한 게임 목록을 만들 수 없습니다. appid, game_name 컬럼을 확인해야 합니다.")
     st.stop()
 
-st.header("1. 분석 대상 게임 선택")
+NO_GAME_OPTION = "게임을 선택해주세요"
+game_label_options = [NO_GAME_OPTION] + game_options["game_label"].tolist()
 
-selected_label = st.selectbox(
-    "게임 선택",
-    options=game_options["game_label"].tolist(),
-    help="분석 데이터가 준비된 게임만 선택할 수 있습니다.",
-)
+if st.session_state.get("postlaunch_game_select") not in game_label_options:
+    st.session_state["postlaunch_game_select"] = NO_GAME_OPTION
+
+
+def reset_postlaunch_input_state() -> None:
+    """게임 선택과 생성 결과를 함께 초기화합니다."""
+    for key in list(st.session_state.keys()):
+        if str(key).startswith("postlaunch_llm_result_"):
+            del st.session_state[key]
+    st.session_state["postlaunch_game_select"] = NO_GAME_OPTION
+
+
+st.header("1. 분석 대상 게임 선택 및 제안 생성")
+st.caption("분석할 게임을 선택하고 **패치·운영 방향 생성** 버튼을 누르면 제안 카드가 생성됩니다.")
+
+postlaunch_input_box = st.container(border=True)
+
+with postlaunch_input_box:
+    selected_label = st.selectbox(
+        "게임 선택",
+        options=game_label_options,
+        key="postlaunch_game_select",
+        help="분석 데이터가 준비된 게임만 선택할 수 있습니다.",
+    )
+
+    col_generate, col_clear = st.columns([1, 1])
+
+    with col_generate:
+        generate_clicked = st.button(
+            "패치·운영 방향 생성",
+            type="primary",
+            use_container_width=True,
+            disabled=(selected_label == NO_GAME_OPTION),
+        )
+
+    with col_clear:
+        clear_clicked = st.button(
+            "현재 결과 초기화",
+            use_container_width=True,
+            on_click=reset_postlaunch_input_state,
+        )
+
+if selected_label == NO_GAME_OPTION:
+    st.info("분석할 게임을 먼저 선택해주세요. 게임을 선택하면 패치·운영 방향 생성 버튼을 사용할 수 있습니다.")
+    st.stop()
 
 selected_row = game_options[game_options["game_label"] == selected_label].iloc[0]
 selected_appid = int(selected_row["appid"])
@@ -1070,43 +1451,10 @@ elif state_key not in st.session_state:
 
 result_dict = st.session_state[state_key]
 
-
-# ============================================================
-# 현재 리뷰 상태 요약
-# ============================================================
-st.divider()
-render_postlaunch_overview(analysis_overview, selected_evidence)
-
-
-# ============================================================
-# LLM 생성 영역
-# ============================================================
-st.divider()
-st.header("3. 패치·운영 방향 생성")
-
 if result_dict:
     st.success("이 게임과 현재 근거표 기준의 기존 패치·운영 제안 결과를 불러왔습니다.")
 else:
-    st.info("아직 이 게임과 현재 근거표 기준의 패치·운영 제안 결과가 없습니다. 버튼을 누르면 리포트를 생성합니다.")
-
-col_generate, col_clear = st.columns([1, 1])
-
-with col_generate:
-    generate_clicked = st.button(
-        "🤖 패치·운영 방향 생성",
-        type="primary",
-        use_container_width=True,
-    )
-
-with col_clear:
-    clear_clicked = st.button(
-        "현재 결과 지우기",
-        use_container_width=True,
-    )
-
-if clear_clicked:
-    st.session_state[state_key] = None
-    st.rerun()
+    st.info("아직 이 게임과 현재 근거표 기준의 패치·운영 제안 결과가 없습니다. 버튼을 누르면 제안 카드를 생성합니다.")
 
 if generate_clicked:
     if cached_result is not None and not force_regenerate:
@@ -1149,77 +1497,28 @@ strategy_df = make_patch_ops_strategy_table(result_dict) if result_dict else Non
 # ============================================================
 st.divider()
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    [
-        "📝 리포트",
-        "🛠️ 패치 및 운영 제안",
-        "📊 반복 이슈 근거",
-        "✅ 생성 결과 점검",
-        "🧾 리뷰 샘플",
-    ]
-)
+if show_detail_sections:
+    tab_strategy, tab_evidence, tab_review_validation = st.tabs(
+        [
+            "🛠️ 패치·운영 제안",
+            "📊 근거 보기",
+            "🧾 리뷰·검증",
+        ]
+    )
+else:
+    (tab_strategy,) = st.tabs(["🛠️ 패치·운영 제안"])
 
 
 # ------------------------------------------------------------
-# Tab 1. LLM 리포트
+# Tab 1. 패치·운영 제안
 # ------------------------------------------------------------
-with tab1:
-    st.subheader("출시 후 리뷰 분석 리포트")
-
-    if not result_dict:
-        st.warning("아직 리포트가 생성되지 않았습니다. 상단의 생성 버튼을 먼저 눌러주세요.")
-        st.markdown(
-            """
-            생성 후 이 탭에는 다음 내용이 표시됩니다.
-
-            1. 분석 대상 요약  
-            2. 데이터 요약  
-            3. 현재 리뷰 상태 요약  
-            4. 최종 요약  
-            5. 해석 시 주의사항
-            """
-        )
-    else:
-        report_markdown = make_postlaunch_llm_report_markdown_v2(
-            result_dict=result_dict,
-            analysis_overview=analysis_overview,
-            evidence_df=selected_evidence,
-        )
-        report_markdown = clean_pipeline_terms(report_markdown)
-
-        st.markdown(report_markdown)
-
-        st.download_button(
-            label="리포트 Markdown 다운로드",
-            data=report_markdown.encode("utf-8-sig"),
-            file_name=f"postlaunch_report_{selected_appid}.md",
-            mime="text/markdown",
-        )
-
-
-# ------------------------------------------------------------
-# Tab 2. 패치 및 운영 제안
-# ------------------------------------------------------------
-with tab2:
-    st.subheader("패치 및 운영 제안")
-
+with tab_strategy:
     if not result_dict or strategy_df is None or strategy_df.empty:
         st.warning("아직 패치·운영 제안이 생성되지 않았습니다. 상단의 생성 버튼을 먼저 눌러주세요.")
     else:
-        filtered_strategy_df = render_strategy_cards(strategy_df)
+        filtered_strategy_df = render_strategy_cards(strategy_df, evidence_df=selected_evidence)
 
-        st.divider()
-        st.subheader("상세 분석")
-        st.caption("카드에서 요약을 먼저 확인한 뒤, 문단형 분석과 표 형태 결과를 필요할 때 확인합니다.")
-
-        detail_tab1, detail_tab2 = st.tabs(["문단형 분석", "표 형태"])
-
-        with detail_tab1:
-            proposal_markdown = make_patch_ops_proposal_markdown_v2(result_dict)
-            proposal_markdown = clean_pipeline_terms(proposal_markdown)
-            st.markdown(proposal_markdown)
-
-        with detail_tab2:
+        with st.expander("표 형태로 보기", expanded=False):
             render_wrapped_table(filtered_strategy_df, height_px=560)
 
         strategy_csv = strategy_df.to_csv(index=False).encode("utf-8-sig")
@@ -1232,143 +1531,161 @@ with tab2:
 
 
 # ------------------------------------------------------------
-# Tab 3. 근거 데이터
+# Tab 2. 근거 보기
 # ------------------------------------------------------------
-with tab3:
-    st.subheader("패치·운영 제안에 사용한 반복 이슈 근거")
-
-    st.markdown(
-        """
-        이 표는 패치·운영 제안을 만들 때 사용한 반복 이슈 목록입니다.  
-        어떤 이슈가 어떤 대응 방식으로 묶였고, 우선 점검이 필요한 이유가 무엇인지 확인할 수 있습니다.
-        """
-    )
-
-    filter_col1, filter_col2, filter_col3 = st.columns(3)
-
-    with filter_col1:
-        action_options = ["전체"] + sorted(
-            selected_evidence["action_group_hint"].dropna().astype(str).unique().tolist()
-        ) if "action_group_hint" in selected_evidence.columns else ["전체"]
-        selected_action_filter = st.selectbox("대응 방식", action_options, key="postlaunch_action_filter", help=POSTLAUNCH_FILTER_HELP["response_type"])
-
-    with filter_col2:
-        raw_priority_values = selected_evidence.get("rule_priority_hint", pd.Series(dtype=str)).astype(str).unique().tolist()
-        priority_options = ["전체"] + [_priority_display(p) for p in ["상", "중", "하"] if p in raw_priority_values]
-        selected_priority_display = st.selectbox("점검 우선도", priority_options, key="postlaunch_priority_filter", help=POSTLAUNCH_FILTER_HELP["priority"])
-        selected_priority_filter = _priority_raw(selected_priority_display)
-
-    with filter_col3:
-        issue_tag_options = (
-            sorted(selected_evidence["issue_name_kor"].dropna().astype(str).unique().tolist())
-            if "issue_name_kor" in selected_evidence.columns
-            else []
-        )
-        selected_issue_tags = st.multiselect(
-            "이슈 태그",
-            options=issue_tag_options,
-            default=[],
-            key="postlaunch_issue_tag_filter",
-            help=POSTLAUNCH_FILTER_HELP["issue_tag"],
-            placeholder="이슈 태그를 선택해주세요",
+if show_detail_sections:
+    with tab_evidence:
+        render_section_lead(
+            "패치·운영 제안에 사용한 근거를 확인합니다.",
+            "이 탭은 선택한 게임의 리뷰에서 어떤 이슈가 반복되었고, 어떤 대응 방식으로 묶였는지 보여줍니다.     \n"
+            "반복 리뷰 수, 부정·혼합 맥락, Steam 비추천 맥락, High urgency 신호를 함께 확인할 수 있습니다.",
         )
 
-    evidence_view = selected_evidence.copy()
+        with st.expander("현재 리뷰 상태 요약 보기", expanded=False):
+            st.info(
+                "선택한 게임의 리뷰 규모, 부정·혼합 반응, Steam 비추천, 긴급 확인 후보를 요약합니다.    \n"
+                "패치·운영 제안 카드가 어떤 리뷰 상태를 바탕으로 만들어졌는지 빠르게 확인하는 용도입니다."
+            )
+            render_postlaunch_overview(
+                analysis_overview=analysis_overview,
+                selected_evidence=selected_evidence,
+                show_header=False,
+                show_lead=False,
+            )
 
-    if selected_action_filter != "전체" and "action_group_hint" in evidence_view.columns:
-        evidence_view = evidence_view[evidence_view["action_group_hint"] == selected_action_filter]
+        with st.expander("반복 이슈 근거 데이터 보기", expanded=False):
+            st.info(
+                "패치·운영 제안에 사용된 이슈별 근거 데이터를 표로 확인합니다.  \n"
+                "반복 리뷰 수, 부정·혼합 맥락, Steam 비추천, 짧은 플레이타임 부정 반응 등을 함께 보며 제안의 근거를 검토할 수 있습니다."
+            )
+            with st.expander("필터 기준 안내 보기", expanded=False):
+                render_postlaunch_filter_guide()
 
-    if selected_priority_filter != "전체" and "rule_priority_hint" in evidence_view.columns:
-        evidence_view = evidence_view[evidence_view["rule_priority_hint"] == selected_priority_filter]
+            filter_col1, filter_col2, filter_col3 = st.columns(3)
 
-    if selected_issue_tags and "issue_name_kor" in evidence_view.columns:
-        evidence_view = evidence_view[
-            evidence_view["issue_name_kor"].astype(str).isin(selected_issue_tags)
-        ]
+            with filter_col1:
+                raw_priority_values = selected_evidence.get("rule_priority_hint", pd.Series(dtype=str)).astype(str).unique().tolist()
+                priority_options = ["전체"] + [_priority_display(p) for p in ["상", "중", "하"] if p in raw_priority_values]
+                selected_priority_display = st.selectbox(
+                    "점검 우선도",
+                    priority_options,
+                    key="postlaunch_priority_filter",
+                    help=POSTLAUNCH_FILTER_HELP["priority"],
+                )
+                selected_priority_filter = _priority_raw(selected_priority_display)
 
-    st.caption(f"표시 중인 근거 데이터: {len(evidence_view):,}행 / 전체 {len(selected_evidence):,}행")
+            with filter_col2:
+                action_options = ["전체"] + sorted(
+                    selected_evidence["action_group_hint"].dropna().astype(str).unique().tolist()
+                ) if "action_group_hint" in selected_evidence.columns else ["전체"]
+                selected_action_filter = st.selectbox(
+                    "대응 방식",
+                    action_options,
+                    key="postlaunch_action_filter",
+                    help=POSTLAUNCH_FILTER_HELP["response_type"],
+                )
 
-    evidence_display_df = make_evidence_display_df(evidence_view, max_rows=max_evidence_rows)
-    render_wrapped_table(evidence_display_df, height_px=560)
+            with filter_col3:
+                issue_tag_options = (
+                    sorted(selected_evidence["issue_name_kor"].dropna().astype(str).unique().tolist())
+                    if "issue_name_kor" in selected_evidence.columns
+                    else []
+                )
+                selected_issue_tags = st.multiselect(
+                    "이슈 태그",
+                    options=issue_tag_options,
+                    default=[],
+                    key="postlaunch_issue_tag_filter",
+                    help=POSTLAUNCH_FILTER_HELP["issue_tag"],
+                    placeholder="이슈 태그를 선택해주세요",
+                )
 
-    evidence_csv = evidence_display_df.to_csv(index=False).encode("utf-8-sig")
-    st.download_button(
-        label="근거 데이터 CSV 다운로드",
-        data=evidence_csv,
-        file_name=f"postlaunch_evidence_{selected_appid}.csv",
-        mime="text/csv",
-    )
+            evidence_view = selected_evidence.copy()
+
+            if selected_action_filter != "전체" and "action_group_hint" in evidence_view.columns:
+                evidence_view = evidence_view[evidence_view["action_group_hint"] == selected_action_filter]
+
+            if selected_priority_filter != "전체" and "rule_priority_hint" in evidence_view.columns:
+                evidence_view = evidence_view[evidence_view["rule_priority_hint"] == selected_priority_filter]
+
+            if selected_issue_tags and "issue_name_kor" in evidence_view.columns:
+                evidence_view = evidence_view[
+                    evidence_view["issue_name_kor"].astype(str).isin(selected_issue_tags)
+                ]
+
+            st.caption(f"표시 중인 근거 데이터: {len(evidence_view):,}행 / 전체 {len(selected_evidence):,}행")
+
+            evidence_display_df = make_evidence_display_df(evidence_view, max_rows=max_evidence_rows)
+            render_wrapped_table(evidence_display_df, height_px=560)
+
+            evidence_csv = evidence_display_df.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                label="근거 데이터 CSV 다운로드",
+                data=evidence_csv,
+                file_name=f"postlaunch_evidence_{selected_appid}.csv",
+                mime="text/csv",
+            )
 
 
 # ------------------------------------------------------------
-# Tab 4. 검증 결과
+# Tab 3. 리뷰·검증
 # ------------------------------------------------------------
-with tab4:
-    st.subheader("생성 결과 점검")
+if show_detail_sections:
+    with tab_review_validation:
+        render_section_lead(
+            "패치·운영 제안의 검증 결과와 리뷰 샘플을 확인합니다.",
+            "이 탭에서는 생성된 패치·운영 제안이 근거 데이터의 대응 방식과 점검 우선도를 유지했는지 확인합니다.     \n필요할 때 실제 리뷰 샘플과 패치·운영 분류 기준도 함께 참고할 수 있습니다.",
+        )
 
-    render_postlaunch_validation_guide(validation_df)
+        with st.expander("생성 결과 점검 보기", expanded=False):
+            render_postlaunch_validation_guide(validation_df)
 
-    st.markdown("#### 검증 결과표")
-    st.caption(
-        "생성된 패치·운영 제안이 근거 데이터의 대응 방식과 점검 우선도를 그대로 사용했는지 확인한 결과입니다. "
-        "확인 필요 항목이 있을 경우, 최종 표에서는 근거 데이터 기준으로 보정합니다."
-    )
-    render_wrapped_table(validation_df, height_px=360)
+            st.markdown("#### 검증 결과표")
+            st.caption(
+                "생성된 패치·운영 제안이 근거 데이터의 대응 방식과 점검 우선도를 그대로 사용했는지 확인한 결과입니다. "
+                "확인 필요 항목이 있을 경우, 최종 표에서는 근거 데이터 기준으로 보정합니다."
+            )
+            render_wrapped_table(validation_df, height_px=360)
 
-    st.divider()
-    st.subheader("패치·운영 분류 기준")
-    st.markdown(
-        """
-        아래 기준은 결과 해석을 돕기 위한 안내입니다.  
-        화면에는 내부 기준값인 상·중·하 대신 **우선 점검 / 추가 검토 / 참고**로 표시합니다.
-        """
-    )
+            validation_csv = validation_df.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                label="검증 결과 CSV 다운로드",
+                data=validation_csv,
+                file_name=f"postlaunch_validation_result_{selected_appid}.csv",
+                mime="text/csv",
+            )
 
-    priority_guide_df, action_guide_df = make_postlaunch_classification_guide_tables()
-    guide_col1, guide_col2 = st.columns(2)
+        with st.expander("리뷰 샘플 보기", expanded=False):
+            st.info(
+                "선택한 게임의 실제 리뷰 단위 분석 결과를 확인합니다.   \n"
+                "제안 카드가 어떤 리뷰 내용에서 출발했는지 볼 때 사용하는 참고 자료입니다."
+            )
 
-    with guide_col1:
-        st.markdown("#### 점검 우선도 기준")
-        render_wrapped_table(priority_guide_df, height_px=260)
+            review_display_df = make_review_display_df(
+                review_base=review_base,
+                selected_appid=selected_appid,
+                max_rows=max_review_rows,
+            )
+            render_wrapped_table(review_display_df, height_px=620)
 
-    with guide_col2:
-        st.markdown("#### 대응 방식 기준")
-        render_wrapped_table(action_guide_df, height_px=320)
+            review_csv = review_display_df.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                label="리뷰 샘플 CSV 다운로드",
+                data=review_csv,
+                file_name=f"postlaunch_review_sample_{selected_appid}.csv",
+                mime="text/csv",
+            )
 
-    validation_csv = validation_df.to_csv(index=False).encode("utf-8-sig")
-    st.download_button(
-        label="검증 결과 CSV 다운로드",
-        data=validation_csv,
-        file_name=f"postlaunch_validation_result_{selected_appid}.csv",
-        mime="text/csv",
-    )
-
-
-# ------------------------------------------------------------
-# Tab 5. 리뷰 샘플
-# ------------------------------------------------------------
-with tab5:
-    st.subheader("리뷰 샘플")
-
-    st.markdown(
-        """
-        선택한 게임의 리뷰 단위 분석 결과입니다.  
-        감정 분류, 주요 이슈, 긴급 확인 후보, 리뷰 요약, 개선 제안 후보를 확인할 수 있습니다.
-        """
-    )
-
-    review_display_df = make_review_display_df(
-        review_base=review_base,
-        selected_appid=selected_appid,
-        max_rows=max_review_rows,
-    )
-
-    render_wrapped_table(review_display_df, height_px=620)
-
-    review_csv = review_display_df.to_csv(index=False).encode("utf-8-sig")
-    st.download_button(
-        label="리뷰 샘플 CSV 다운로드",
-        data=review_csv,
-        file_name=f"postlaunch_review_sample_{selected_appid}.csv",
-        mime="text/csv",
-    )
+        with st.expander("패치·운영 분류 기준 보기", expanded=False):
+            st.info(
+                "패치·운영 제안 카드의 점검 우선도와 대응 방식을 어떻게 해석해야 하는지 정리한 기준표입니다.    \n"
+                "내부 기준값은 화면에서 우선 점검, 추가 검토, 참고로 바꾸어 표시합니다."
+            )
+            priority_guide_df, action_guide_df = make_postlaunch_classification_guide_tables()
+            guide_col1, guide_col2 = st.columns(2)
+            with guide_col1:
+                st.markdown("#### 점검 우선도 기준")
+                render_wrapped_table(priority_guide_df, height_px=260)
+            with guide_col2:
+                st.markdown("#### 대응 방식 기준")
+                render_wrapped_table(action_guide_df, height_px=320)
