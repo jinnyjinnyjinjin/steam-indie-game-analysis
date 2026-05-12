@@ -107,6 +107,15 @@ game-analysis/
 
 **[Google Drive 데이터 다운로드](https://drive.google.com/drive/folders/1v6ufW8Kks5MOc4QjC_yzFvm2PHy3Z5DG?usp=drive_link)**
 
+| 파일 | 설명 | 출처 |
+|---|---|---|
+| `steamspy_indie_games.csv` | 인디게임 목록, 소유자 수, 리뷰 수, 가격, 태그 | SteamSpy API |
+| `steam_app_details.csv` | 게임 상세 정보 (장르, 카테고리, 언어 지원, 출시일 등) | Steam Store API |
+| `steam_indie_tags.csv` | 게임별 태그 및 투표 수 | SteamSpy API |
+| `steam_indie_reviews.csv` | 리뷰 원문, 긍정/부정 여부, 작성일 | Steam Review API |
+| `steam_indie_review_summary.csv` | 게임별 리뷰 요약 통계 (review_score 등) | Steam Review API |
+| `steam_indie_review_histogram.csv` | 게임별 월별·일별 리뷰 집계 | Steam Review API |
+
 ---
 
 ## 환경 설정
