@@ -78,8 +78,6 @@ GEMINI_MODEL = "gemini-3.1-flash-lite"
 
 ```bash
 streamlit run streamlit_app/main.py
-
-streamlit run dashboard/streamlit/app.py
 ```
 
 또는 `streamlit_app` 폴더로 이동한 뒤 실행합니다.

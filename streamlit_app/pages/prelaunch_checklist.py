@@ -25,7 +25,6 @@ from utils.prelaunch_engine import (
     make_prelaunch_report_markdown,
 )
 
-
 # ============================================================
 # 대시보드 스타일 보조 함수
 # ============================================================
@@ -34,6 +33,31 @@ def inject_dashboard_style() -> None:
     st.markdown(
         """
         <style>
+        .stApp { background: radial-gradient(circle at top left, rgba(30,64,175,0.14), transparent 34%), linear-gradient(180deg, #0b1018 0%, #070b12 100%); color: #f8fafc; }
+        [data-testid="stHeader"] { background: rgba(11,16,24,0.72); }
+        [data-testid="stHeader"] {
+            background-color: rgba(11, 16, 24, 0.86) !important;
+        }
+        [data-testid="stSidebar"], section[data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #0f172a 0%, #0b1018 100%) !important;
+            color: #f8fafc !important;
+        }
+        .stMarkdown, .stText, p, label, span, div {
+            color: inherit;
+        }
+        .stButton > button {
+            color: #f8fafc !important;
+            border-color: rgba(148, 163, 184, 0.38) !important;
+        }
+        .stButton > button[kind="secondary"],
+        .stButton > button[data-testid="baseButton-secondary"] {
+            background-color: #111827 !important;
+        }
+        div[data-testid="stDataFrame"],
+        div[data-testid="stTable"] {
+            background-color: #0b0f17 !important;
+            color: #f8fafc !important;
+        }
         .dash-card {
             background: rgba(255,255,255,0.045);
             border: 1px solid rgba(255,255,255,0.12);
@@ -113,53 +137,158 @@ def inject_dashboard_style() -> None:
             white-space: pre-line;
         }
         .badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             border-radius: 999px;
-            padding: 4px 10px;
-            font-size: 0.78rem;
-            font-weight: 800;
-            margin-right: 6px;
-            margin-bottom: 8px;
+            padding: 6px 13px;
+            font-size: 0.82rem;
+            font-weight: 850;
+            margin-right: 8px;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
         }
-        .badge-high { background: rgba(239,68,68,0.16); color: #fca5a5; border: 1px solid rgba(239,68,68,0.30); }
-        .badge-mid { background: rgba(245,158,11,0.16); color: #fcd34d; border: 1px solid rgba(245,158,11,0.30); }
-        .badge-low { background: rgba(59,130,246,0.16); color: #93c5fd; border: 1px solid rgba(59,130,246,0.30); }
-        .badge-neutral { background: rgba(148,163,184,0.14); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.24); }
+        .badge-high { background: rgba(239,68,68,0.17); color: #fecaca; border: 1px solid rgba(248,113,113,0.55); box-shadow: 0 0 18px rgba(239,68,68,0.12); }
+        .badge-mid { background: rgba(245,158,11,0.15); color: #fde68a; border: 1px solid rgba(245,158,11,0.46); box-shadow: 0 0 18px rgba(245,158,11,0.10); }
+        .badge-low { background: rgba(59,130,246,0.16); color: #bfdbfe; border: 1px solid rgba(96,165,250,0.48); box-shadow: 0 0 18px rgba(59,130,246,0.10); }
+        .badge-neutral { background: rgba(148,163,184,0.14); color: #e2e8f0; border: 1px solid rgba(148,163,184,0.30); }
+
         .check-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.13);
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 28px;
+            align-items: center;
+            overflow: hidden;
+            margin: 0 0 18px 0;
+            padding: 24px 28px;
+            border-radius: 22px;
+            border: 1px solid rgba(96,165,250,0.30);
             border-left: 5px solid #60a5fa;
-            border-radius: 16px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
+            background:
+                radial-gradient(circle at 8% 18%, rgba(56,189,248,0.12), transparent 28%),
+                linear-gradient(135deg, rgba(15,23,42,0.88), rgba(2,8,23,0.92));
+            box-shadow: 0 18px 46px rgba(2, 8, 23, 0.30), inset 0 0 0 1px rgba(255,255,255,0.025);
+        }
+        .check-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(148,163,184,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148,163,184,0.035) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        .check-card > * {
+            position: relative;
+            z-index: 1;
         }
         .check-card.high {
-            border-color: rgba(239,68,68,0.36);
-            border-left-color: #ef4444;
-            background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(255,255,255,0.035));
+            border-color: rgba(248,113,113,0.52);
+            border-left-color: #ff4d5a;
+            box-shadow: 0 20px 56px rgba(127,29,29,0.22), 0 0 32px rgba(239,68,68,0.11), inset 0 0 0 1px rgba(255,255,255,0.025);
+            background:
+                radial-gradient(circle at 5% 12%, rgba(248,113,113,0.18), transparent 28%),
+                linear-gradient(135deg, rgba(52,12,24,0.80), rgba(2,8,23,0.93));
         }
         .check-card.mid {
-            border-color: rgba(245,158,11,0.34);
+            border-color: rgba(245,158,11,0.48);
             border-left-color: #f59e0b;
-            background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(255,255,255,0.035));
+            background:
+                radial-gradient(circle at 5% 12%, rgba(245,158,11,0.14), transparent 28%),
+                linear-gradient(135deg, rgba(42,28,9,0.78), rgba(2,8,23,0.93));
         }
         .check-card.low {
-            border-color: rgba(59,130,246,0.34);
+            border-color: rgba(96,165,250,0.46);
             border-left-color: #3b82f6;
-            background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(255,255,255,0.035));
+            background:
+                radial-gradient(circle at 5% 12%, rgba(59,130,246,0.16), transparent 28%),
+                linear-gradient(135deg, rgba(15,23,42,0.88), rgba(2,8,23,0.93));
+        }
+        .check-main {
+            min-width: 0;
         }
         .check-title {
-            font-size: 1.08rem;
-            font-weight: 850;
+            font-size: clamp(1.45rem, 2.2vw, 1.95rem);
+            font-weight: 920;
             color: #f8fafc;
             margin: 8px 0 8px 0;
+            letter-spacing: -0.055em;
         }
         .check-question {
-            font-size: 1.02rem;
-            font-weight: 750;
-            line-height: 1.62;
+            font-size: 1.05rem;
+            font-weight: 720;
+            line-height: 1.65;
             color: #f8fafc;
-            margin: 8px 0 16px 0;
+            margin: 0 0 18px 0;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(148,163,184,0.16);
+        }
+        .method-block {
+            margin-top: 4px;
+        }
+        .method-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #f87171;
+            font-size: 0.96rem;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            margin-bottom: 9px;
+        }
+        .method-text {
+            color: #e5e7eb;
+            font-size: 1.0rem;
+            line-height: 1.72;
+            padding-left: 34px;
+        }
+        .evidence-box {
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 152px;
+            padding: 20px 22px;
+            border-radius: 18px;
+            border: 1px solid rgba(96,165,250,0.36);
+            background: linear-gradient(135deg, rgba(15,23,42,0.76), rgba(8,47,73,0.18));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.022), 0 0 28px rgba(59,130,246,0.08);
+        }
+        .evidence-title {
+            color: #60a5fa;
+            font-size: 1.2rem;
+            font-weight: 920;
+            letter-spacing: -0.04em;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(96,165,250,0.30);
+        }
+        .evidence-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: #e2e8f0;
+            font-size: 0.98rem;
+            line-height: 1.55;
+            margin: 8px 0;
+        }
+        .evidence-icon {
+            width: 22px;
+            min-width: 22px;
+            color: #38bdf8;
+            font-weight: 900;
+            text-align: center;
+        }
+        .evidence-line.status-high .evidence-icon { color: #ff6b6b; }
+        .evidence-line.status-mid .evidence-icon { color: #60a5fa; }
+        .evidence-line.status-low .evidence-icon { color: #60a5fa; }
+        @media (max-width: 1100px) {
+            .check-card {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
         }
         .mini-label {
             font-size: 0.9rem;
@@ -177,15 +306,158 @@ def inject_dashboard_style() -> None:
         .mini-text.evidence {
             color: #cbd5e1;
         }
+
+        /* ============================================================
+           출시 전 체크리스트 전용 레이아웃
+           - 시안의 카드형 구조를 Streamlit 기본 컴포넌트에 입힘
+           ============================================================ */
+        .prelaunch-hero {
+            position: relative;
+            overflow: hidden;
+            margin: 0 0 1.25rem 0;
+            padding: 1.75rem 2rem 1.55rem 2rem;
+            border-radius: 26px;
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            background:
+                radial-gradient(circle at 8% 30%, rgba(56, 189, 248, 0.20), transparent 18%),
+                radial-gradient(circle at 92% 18%, rgba(37, 99, 235, 0.12), transparent 24%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(2, 8, 23, 0.92));
+            box-shadow: 0 24px 70px rgba(2, 8, 23, 0.40), inset 0 0 0 1px rgba(255,255,255,0.03);
+        }
+        .prelaunch-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+            background-size: 38px 38px;
+            mask-image: linear-gradient(90deg, rgba(0,0,0,0.88), rgba(0,0,0,0.56), transparent);
+            pointer-events: none;
+        }
+        .prelaunch-hero-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+        }
+        .prelaunch-hero-icon {
+            width: 78px;
+            height: 78px;
+            min-width: 78px;
+            display: grid;
+            place-items: center;
+            border-radius: 24px;
+            font-size: 2.55rem;
+            background: radial-gradient(circle, rgba(59,130,246,0.26), rgba(15,23,42,0.18));
+            border: 1px solid rgba(96, 165, 250, 0.42);
+            box-shadow: 0 0 42px rgba(56, 189, 248, 0.24);
+        }
+        .prelaunch-hero-title {
+            margin: 0;
+            color: #ffffff;
+            font-size: clamp(2.1rem, 3.6vw, 3.4rem);
+            line-height: 1.08;
+            letter-spacing: -0.07em;
+            font-weight: 920;
+        }
+        .prelaunch-hero-subtitle {
+            margin-top: 0.55rem;
+            color: rgba(226, 232, 240, 0.78);
+            font-size: 1.03rem;
+            line-height: 1.65;
+        }
+        .prelaunch-section-caption {
+            color: rgba(203, 213, 225, 0.72);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin: -0.35rem 0 1.05rem 0;
+        }
+        .prelaunch-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin: 1.35rem 0 0.8rem 0;
+            color: #ffffff;
+            font-size: 1.58rem;
+            font-weight: 900;
+            letter-spacing: -0.055em;
+        }
+        .prelaunch-panel-title .small-icon {
+            width: 32px;
+            height: 32px;
+            display: inline-grid;
+            place-items: center;
+            border-radius: 11px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.26);
+            color: #7dd3fc;
+            font-size: 1rem;
+        }
+        div[data-testid="stForm"] {
+            padding: 1.05rem 1.05rem 1rem 1.05rem;
+            border-radius: 22px;
+            border: 1px solid rgba(56, 189, 248, 0.34);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(2, 8, 23, 0.78));
+            box-shadow: 0 22px 58px rgba(2, 8, 23, 0.28), inset 0 0 0 1px rgba(255,255,255,0.025);
+        }
+        div[data-testid="stForm"] label {
+            font-weight: 760 !important;
+            color: rgba(248, 250, 252, 0.94) !important;
+        }
+        div[data-testid="stForm"] .stButton > button {
+            min-height: 2.95rem;
+            border-radius: 13px !important;
+            font-weight: 850 !important;
+            letter-spacing: -0.02em;
+        }
+        .prelaunch-info-strip {
+            margin: 0.65rem 0 0.75rem 0;
+            padding: 0.78rem 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(15, 23, 42, 0.70));
+            color: rgba(191, 219, 254, 0.95);
+            font-weight: 650;
+            line-height: 1.55;
+        }
+        .prelaunch-chart-wrap {
+            padding: 0.7rem 0.85rem 0.85rem 0.85rem;
+            border-radius: 18px;
+            border: 1px solid rgba(96, 165, 250, 0.23);
+            background: rgba(15, 23, 42, 0.42);
+        }
+        div[data-testid="stTabs"] button[role="tab"] {
+            color: rgba(226,232,240,0.72) !important;
+            font-weight: 760 !important;
+        }
+        div[data-testid="stTabs"] button[aria-selected="true"] {
+            color: #38bdf8 !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+def apply_dark_chart_theme(chart: alt.Chart) -> alt.Chart:
+    """Streamlit 라이트 모드에서도 그래프가 다크 배경으로 보이도록 고정합니다."""
+    return (
+        chart
+        .properties(background="#0b0f17")
+        .configure_view(fill="#0b0f17", strokeOpacity=0)
+        .configure_axis(
+            labelColor="#cbd5e1",
+            titleColor="#f8fafc",
+            gridColor="#273142",
+            domainColor="#3a4252",
+            tickColor="#3a4252",
+        )
+        .configure_title(color="#f8fafc")
+    )
 
 def _html_text(value) -> str:
     return html.escape(clean_visible_terms("" if value is None or pd.isna(value) else str(value)))
-
 
 def render_metric_card(label: str, value: str, caption: str = "", tone: str = "neutral") -> None:
     """요약 KPI 카드를 출력합니다. tone 값으로 중요도에 따른 색상만 최소 적용합니다."""
@@ -201,7 +473,6 @@ def render_metric_card(label: str, value: str, caption: str = "", tone: str = "n
         unsafe_allow_html=True,
     )
 
-
 def render_section_lead(title: str, body: str) -> None:
     st.markdown(
         f"""
@@ -213,20 +484,16 @@ def render_section_lead(title: str, body: str) -> None:
         unsafe_allow_html=True,
     )
 
-
 def _priority_class(priority: str) -> str:
     return {"상": "high", "중": "mid", "하": "low"}.get(str(priority), "neutral")
-
 
 def _priority_display(priority: str) -> str:
     """내부 상/중/하 값을 사용자 친화적인 표현으로 바꿉니다."""
     return {"상": "우선 점검", "중": "추가 검토", "하": "참고"}.get(str(priority), str(priority))
 
-
 def _priority_raw(display_value: str) -> str:
     """화면 표시값을 내부 우선순위 값으로 되돌립니다."""
     return {"우선 점검": "상", "추가 검토": "중", "참고": "하"}.get(str(display_value), str(display_value))
-
 
 def _direction_display(direction: str) -> str:
     """분석자용 해석 방향 표현을 개발자용 점검 유형 표현으로 바꿉니다."""
@@ -237,7 +504,6 @@ def _direction_display(direction: str) -> str:
         "참고 요소": "참고 요소",
     }.get(str(direction), str(direction))
 
-
 def _direction_raw(display_value: str) -> str:
     return {
         "확인 필요 요소": "리스크 요소",
@@ -245,7 +511,6 @@ def _direction_raw(display_value: str) -> str:
         "확인 요소": "확인 요소",
         "참고 요소": "참고 요소",
     }.get(str(display_value), str(display_value))
-
 
 def clean_visible_terms(text: str) -> str:
     """사용자 화면에 보이는 내부 모델 표현을 자연스러운 표현으로 바꿉니다."""
@@ -270,12 +535,8 @@ def clean_visible_terms(text: str) -> str:
         out = out.replace(old, new)
     return out
 
-
 def render_badge(label: str, tone: str = "neutral") -> str:
     return f'<span class="badge badge-{tone}">{html.escape(str(label))}</span>'
-
-
-
 
 def strip_high_urgency_note(text: str) -> str:
     """카드 화면에서는 High urgency 보조 신호를 숨기고 반복 언급 근거만 보여줍니다."""
@@ -285,8 +546,6 @@ def strip_high_urgency_note(text: str) -> str:
     out = re.sub(r"\s*High urgency\s*[:：]?\s*[^.,。)]*", "", out, flags=re.IGNORECASE)
     out = re.sub(r"\s+", " ", out).strip()
     return out or "-"
-
-
 
 def compact_evidence_for_card(text: str) -> str:
     """카드 본문에는 반복 언급 규모만 짧게 보여줍니다."""
@@ -304,7 +563,6 @@ def compact_evidence_for_card(text: str) -> str:
         first_sentence = first_sentence[:87].rstrip() + "..."
     return first_sentence or "유사 게임 리뷰에서 반복적으로 언급된 항목입니다."
 
-
 def compact_method_for_card(text: str) -> str:
     """카드 본문에는 점검 방법을 한 문장으로 짧게 보여줍니다."""
     out = clean_visible_terms(text)
@@ -315,6 +573,38 @@ def compact_method_for_card(text: str) -> str:
     if len(first_sentence) > 95:
         first_sentence = first_sentence[:92].rstrip() + "..."
     return first_sentence
+
+def evidence_lines_for_card(text: str) -> tuple[str, str]:
+    """카드 오른쪽 근거 박스에 들어갈 반복 언급/비추천 맥락 문장을 분리합니다."""
+    out = strip_high_urgency_note(text)
+    if not out or out == "-":
+        return "유사 게임 리뷰에서 반복 언급", "비추천 맥락 확인 필요"
+
+    repeat_match = re.search(
+        r"(\d+개\s*게임\s*중\s*\d+개(?:\([^)]*\))?에서\s*언급(?:되었으며|되었습니다|된 항목입니다)?)",
+        out,
+    )
+    negative_match = re.search(
+        r"(비추천\s*맥락(?:이)?\s*\d+건\s*확인(?:되었습니다|됨|되었습니다\.)?)",
+        out,
+    )
+
+    repeat_line = repeat_match.group(1).rstrip(".") if repeat_match else compact_evidence_for_card(out).rstrip(".")
+    negative_line = negative_match.group(1).rstrip(".") if negative_match else "비추천 맥락 확인 필요"
+    return repeat_line, negative_line
+
+
+def priority_status_text(priority: str) -> str:
+    """우선순위 값을 카드 오른쪽 근거 박스용 상태 문구로 변환합니다."""
+    return {
+        "상": "우선 점검 필요",
+        "중": "추가 검토 가능",
+        "하": "참고 항목",
+        "우선 점검": "우선 점검 필요",
+        "추가 검토": "추가 검토 가능",
+        "참고": "참고 항목",
+    }.get(str(priority), "점검 필요")
+
 
 def notify_detail_toggle_change(enabled: bool, page_key: str, detail_label: str) -> None:
     """상세 근거·검증 보기 상태가 바뀔 때 토스트 알림을 띄웁니다."""
@@ -332,7 +622,6 @@ def notify_detail_toggle_change(enabled: bool, page_key: str, detail_label: str)
             st.caption(message)
     st.session_state[prev_key] = enabled
 
-
 # ============================================================
 # 화면 표시 보조 함수
 # ============================================================
@@ -349,7 +638,6 @@ def _condition_values(user_condition: dict, plural_key: str, single_key: str) ->
 
     return [str(v) for v in values if pd.notna(v) and str(v).strip()]
 
-
 def _count_chart_df(df: pd.DataFrame, column: str, order: list[str] | None = None, label: str = "항목") -> pd.DataFrame:
     """value_counts 결과를 st.bar_chart에 넣기 쉬운 형태로 만듭니다."""
     if df.empty or column not in df.columns:
@@ -364,12 +652,10 @@ def _count_chart_df(df: pd.DataFrame, column: str, order: list[str] | None = Non
     out.columns = [label, "건수"]
     return out
 
-
 def _safe_ratio_series(df: pd.DataFrame, column: str) -> pd.Series:
     if column not in df.columns:
         return pd.Series([0] * len(df), index=df.index)
     return pd.to_numeric(df[column], errors="coerce").fillna(0)
-
 
 def render_bar_chart(
     df: pd.DataFrame,
@@ -442,8 +728,7 @@ def render_bar_chart(
         )
     )
 
-    st.altair_chart(chart, use_container_width=True)
-
+    st.altair_chart(apply_dark_chart_theme(chart), use_container_width=True)
 
 def render_horizontal_bar_chart(
     df: pd.DataFrame,
@@ -494,8 +779,7 @@ def render_horizontal_bar_chart(
         .properties(height=height)
     )
 
-    st.altair_chart(chart, use_container_width=True)
-
+    st.altair_chart(apply_dark_chart_theme(chart), use_container_width=True)
 
 def _cell_class_name(column_name: str) -> str:
     """컬럼명에 따라 HTML table cell class를 부여합니다."""
@@ -508,7 +792,6 @@ def _cell_class_name(column_name: str) -> str:
         "우선순위 근거 설명": "col-evidence-summary",
     }
     return class_map.get(str(column_name), "")
-
 
 def _format_table_cell_text(column_name: str, value) -> str:
     """표 안의 긴 문장을 읽기 좋은 줄 단위로 정리합니다."""
@@ -544,7 +827,6 @@ def _format_table_cell_text(column_name: str, value) -> str:
 
     lines = [line.strip() for line in text.split("\n") if line.strip()]
     return "<br>".join(html.escape(line) for line in lines)
-
 
 def _column_width_px(column_name: str) -> int:
     """주요 컬럼의 가독성을 위해 표 컬럼 너비를 직접 지정합니다."""
@@ -598,7 +880,6 @@ def _column_width_px(column_name: str) -> int:
         "high_urgency_ratio": 150,
     }
     return width_map.get(str(column_name), 160)
-
 
 def render_wrapped_table(df: pd.DataFrame, height_px: int = 520) -> None:
     """긴 문장이 있는 표를 줄바꿈 가능한 HTML 표로 출력합니다.
@@ -722,7 +1003,6 @@ html, body {{
 
     components.html(table_html, height=height_px + 24, scrolling=False)
 
-
 def make_prelaunch_classification_guide_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
     """검증 결과 아래에 보여줄 체크리스트 분류 기준 안내표를 만듭니다."""
     priority_guide = pd.DataFrame(
@@ -765,7 +1045,6 @@ def make_prelaunch_classification_guide_tables() -> tuple[pd.DataFrame, pd.DataF
 
     return priority_guide, direction_guide
 
-
 def render_prelaunch_filter_guide() -> None:
     """출시 전 체크리스트 필터와 카드 배지를 해석하는 기준을 안내합니다."""
     guide_col1, guide_col2 = st.columns(2)
@@ -786,7 +1065,6 @@ def render_prelaunch_filter_guide() -> None:
             "추가 검토: 반복 근거는 있지만, 현재 기획 방향이나 개발 여건에 따라 확인하면 되는 항목입니다.\n"
             "참고: 우선도는 낮지만, 회의나 QA 과정에서 후순위로 참고할 수 있는 항목입니다.",
         )
-
 
 def render_prelaunch_validation_guide(validation_df: pd.DataFrame) -> None:
     """출시 전 체크리스트 생성 결과가 어떤 기준으로 점검되는지 설명합니다."""
@@ -834,22 +1112,27 @@ def render_prelaunch_validation_guide(validation_df: pd.DataFrame) -> None:
         """
     )
 
-
 # ============================================================
 # 출시 전 체크리스트 필터 도움말
 # ============================================================
 
 PRELAUNCH_FILTER_HELP = {
-    "check_type": (
-        "체크리스트 항목을 어떤 관점에서 볼지 선택합니다. "
-        "확인 필요 요소는 리스크, 강화 요소는 살릴 강점, 확인 요소는 추가 판단이 필요한 항목입니다."
-    ),
     "priority": (
-        "출시 전에 어떤 항목을 먼저 점검할지 선택합니다. "
-        "우선 점검은 먼저 볼 항목, 추가 검토는 상황에 따라 확인할 항목, 참고는 후순위 항목입니다."
+        "출시 전에 어떤 항목을 먼저 점검할지 선택합니다.\n\n"
+        "- 우선 점검: 유사 게임에서 반복성이 높고 부정 맥락도 함께 확인되어, 출시 전에 먼저 확인할 필요가 큰 항목입니다.\n"
+        "- 추가 검토: 반복 근거는 있지만 영향 범위나 부정 맥락이 상대적으로 약해, 현재 기획 방향이나 개발 여건에 따라 추가로 확인하면 되는 항목입니다.\n"
+        "- 참고: 우선도는 낮지만 회의, QA, 기획 점검 과정에서 후순위로 참고할 수 있는 항목입니다."
+    ),
+    "check_type": (
+        "체크리스트 항목을 어떤 관점에서 볼지 선택합니다.\n\n"
+        "- 확인 필요 요소: 유사 게임의 부정 리뷰 맥락에서 반복되어 출시 전 품질 점검이 필요한 요소입니다.\n"
+        "- 강화 요소: 유저가 긍정적으로 평가한 방향으로, 현재 기획에서 더 살릴 수 있는 강점 후보입니다.\n"
+        "- 확인 요소: 긍정과 부정이 함께 나타나 실제 게임 맥락에서 추가 확인이 필요한 항목입니다.\n"
+        "- 참고 요소: 직접적인 리스크는 낮지만 유사 게임 반응을 이해하는 데 참고할 수 있는 항목입니다."
     ),
     "issue_tag": (
-        "UI·UX, 버그, 난이도, 콘텐츠 분량처럼 리뷰에서 반복된 세부 이슈를 기준으로 카드를 좁혀 봅니다."
+        "리뷰에서 반복적으로 언급된 세부 이슈를 기준으로 점검 카드를 좁혀 봅니다.\n\n"
+        "예: UI/UX, 버그, 난이도, 밸런스, 콘텐츠 분량, 그래픽·사운드, 가격·가치"
     ),
 }
 
@@ -870,7 +1153,6 @@ def _available_issue_tag_options(df: pd.DataFrame, issue_col: str = "근거 이�
         .tolist()
     )
 
-
 def _card_tag_value(row: pd.Series) -> str:
     """카드 배지에 표시할 이슈 태그를 정합니다.
 
@@ -882,7 +1164,6 @@ def _card_tag_value(row: pd.Series) -> str:
         if pd.notna(value) and str(value).strip():
             return str(value).strip()
     return "이슈 태그"
-
 
 def render_evidence_overview(selected_evidence: pd.DataFrame) -> None:
     """체크리스트 근거를 카드와 그래프로 요약해서 보여줍니다."""
@@ -1121,7 +1402,6 @@ def build_prelaunch_top_issue_chart_df(
 
     return pd.DataFrame(columns=columns)
 
-
 def render_prelaunch_top_issue_chart(chart_df: pd.DataFrame) -> None:
     """출시 전 우선 점검 이슈 TOP 10 그래프를 출력합니다."""
 
@@ -1173,13 +1453,7 @@ def render_prelaunch_top_issue_chart(chart_df: pd.DataFrame) -> None:
         .properties(height=340)
     )
 
-    st.altair_chart(chart, use_container_width=True)
-
-
-
-
-
-
+    st.altair_chart(apply_dark_chart_theme(chart), use_container_width=True)
 
 def render_checklist_overview(
     checklist_df: pd.DataFrame,
@@ -1194,6 +1468,15 @@ def render_checklist_overview(
     high_count = int((checklist_df["우선순위"] == "상").sum())
     mid_count = int((checklist_df["우선순위"] == "중").sum())
     low_count = int((checklist_df["우선순위"] == "하").sum())
+
+    st.markdown(
+        """
+        <div class="prelaunch-info-strip">
+            ⓘ 점검 카드는 필터를 통해 좁혀 확인할 수 있습니다. 각 카드는 유사 게임 리뷰에서 반복된 이슈를 바탕으로 구성되었습니다.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     summary_cols = st.columns(4)
     with summary_cols[0]:
@@ -1243,7 +1526,6 @@ def render_checklist_overview(
         st.caption("유사 게임 리뷰에서 반복적으로 언급된 이슈 중 출시 전에 우선 점검할 항목입니다.")
         render_prelaunch_top_issue_chart(top_issue_chart_df)
 
-
 def render_checklist_cards(checklist_df: pd.DataFrame) -> None:
     """필터 적용 후 체크리스트를 카드 형태로 보여줍니다."""
     if checklist_df.empty:
@@ -1263,12 +1545,14 @@ def render_checklist_cards(checklist_df: pd.DataFrame) -> None:
         ascending=[True, True],
     ).reset_index(drop=True)
 
-    st.markdown("#### 선택한 필터에 해당하는 점검 카드")
+    st.markdown('<div class="prelaunch-panel-title"><span class="small-icon">🧾</span>선택한 필터에 해당하는 점검 카드</div>', unsafe_allow_html=True)
 
     for idx, row in checklist_view.iterrows():
         p_class = _priority_class(row.get("우선순위", "-"))
         tag_label = _card_tag_value(row)
         evidence_summary = strip_high_urgency_note(row.get("근거 요약", "-"))
+        repeat_line, negative_line = evidence_lines_for_card(evidence_summary)
+        priority_status = priority_status_text(row.get("우선순위", "-"))
         check_method = clean_visible_terms(row.get("확인 방법", "-"))
         badges = "".join(
             [
@@ -1280,59 +1564,73 @@ def render_checklist_cards(checklist_df: pd.DataFrame) -> None:
         st.markdown(
             f"""
             <div class="check-card {p_class}">
-                <div>{badges}</div>
-                <div class="check-title">{idx + 1}. {_html_text(row.get('근거 이슈', '-'))}</div>
-                <div class="check-question">{_html_text(row.get('체크 질문', '-'))}</div>
-                <div class="mini-label">출시 전 점검 방법</div>
-                <div class="mini-text">{_html_text(check_method)}</div>
-                <div class="mini-label">반복 언급 근거</div>
-                <div class="mini-text evidence">{_html_text(evidence_summary)}</div>
+                <div class="check-main">
+                    <div class="check-badges">{badges}</div>
+                    <div class="check-title">{idx + 1}. {_html_text(row.get('근거 이슈', '-'))}</div>
+                    <div class="check-question">{_html_text(row.get('체크 질문', '-'))}</div>
+                    <div class="method-block">
+                        <div class="method-label">▣ 출시 전 점검 방법</div>
+                        <div class="method-text">{_html_text(check_method)}</div>
+                    </div>
+                </div>
+                <div class="evidence-box">
+                    <div class="evidence-title">반복 언급 근거</div>
+                    <div class="evidence-line"><span class="evidence-icon">▥</span><span>{_html_text(repeat_line)}</span></div>
+                    <div class="evidence-line"><span class="evidence-icon">▤</span><span>{_html_text(negative_line)}</span></div>
+                    <div class="evidence-line status-{p_class}"><span class="evidence-icon">▱</span><span>{_html_text(priority_status)}</span></div>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-
 
 # ============================================================
 # 페이지 제목
 # ============================================================
 inject_dashboard_style()
 
-st.title("🧭 출시 전 체크리스트")
-
-render_section_lead(
-    "이 분석으로 할 수 있는 것",
-    """- 유사 게임에서 자주 칭찬받은 강점을 확인할 수 있습니다.
-- 출시 전에 점검해야 할 UX, 난이도, 콘텐츠, 가격 관련 리스크를 확인할 수 있습니다.
-- 팀 회의나 QA에서 사용할 출시 전 체크리스트 초안을 만들 수 있습니다.""",
-)
-
-render_section_lead(
-    "사용 흐름",
-    """1. 장르·가격대·Steam 태그·플레이 방식을 선택합니다.
-2. [조건 적용] 버튼을 눌러 유사 게임 리뷰 기반 체크리스트를 생성합니다.
-3. 점검 우선도, 점검 유형, 이슈 태그로 필요한 점검 카드만 확인합니다.
-4. 필요한 경우 사이드바의 [상세 근거·검증 보기]를 켜서 반복 이슈와 매칭 게임을 확인합니다.""",
+st.markdown(
+    """
+    <section class="prelaunch-hero">
+        <div class="prelaunch-hero-content">
+            <div class="prelaunch-hero-icon">🧾</div>
+            <div>
+                <h1 class="prelaunch-hero-title">출시 전 체크리스트</h1>
+                <div class="prelaunch-hero-subtitle">
+                    유사 게임의 출시 초기 리뷰를 바탕으로, 출시 전에 점검할 항목을 체크리스트로 정리합니다.
+                </div>
+            </div>
+        </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
 )
 
 with st.expander("이 페이지 설명 자세히 보기", expanded=False):
     st.markdown(
         """
-이 페이지는 개발자가 **출시 전에 확인해야 할 항목**을 정리하기 위한 화면입니다.
+#### 이 페이지는 무엇을 하나요?
+준비 중인 게임의 장르, 가격대, Steam 태그, 플레이 방식을 입력하면 비슷한 조건의 인디게임들이 출시 초기에 어떤 점을 칭찬받았고 어떤 부분에서 불만이 반복되었는지 확인합니다. 그 결과를 개발자가 바로 사용할 수 있는 출시 전 점검 카드로 정리합니다.
 
-장르, 가격대, Steam 태그, 플레이 방식을 입력하면  
-비슷한 조건의 인디게임들이 출시 초기에 어떤 부분에서 좋은 평가를 받았고,  
-어떤 부분에서 불만이 반복되었는지 확인합니다.
+#### 사용 순서
+1. **게임 속성을 선택합니다.**  
+   장르, 가격대, Steam 태그, 플레이 방식을 선택합니다.
+2. **[조건 적용] 버튼을 누릅니다.**  
+   입력 조건과 유사한 게임 리뷰를 바탕으로 체크리스트가 생성됩니다.
+3. **점검 카드를 확인합니다.**  
+   우선 점검, 추가 검토, 참고 항목을 보고 출시 전에 무엇을 확인할지 정리합니다.
+4. **필요하면 필터로 좁혀 봅니다.**  
+   점검 우선도, 점검 유형, 이슈 태그를 선택해 필요한 카드만 확인합니다.
+5. **근거가 필요하면 상세 근거·검증 보기를 켭니다.**  
+   반복 이슈, 매칭 게임, 생성 결과 검증 내용을 추가로 확인할 수 있습니다.
 
-**이럴 때 사용합니다**
-- 출시 전에 점검해야 할 UX, 난이도, 콘텐츠, 가격 관련 리스크를 보고 싶을 때
-- 비슷한 게임에서 자주 칭찬받거나 비판받은 요소를 확인하고 싶을 때
-- 팀 회의용 출시 전 QA 체크리스트 초안이 필요할 때
+#### 해석할 때 주의할 점
+- 이 결과는 성공 가능성 예측이 아니라 출시 전 점검을 돕는 참고 자료입니다.
+- 최종 판단에는 실제 기획 의도, 개발 일정, QA 결과를 함께 반영해야 합니다.
         """
     )
 
 st.divider()
-
 
 # ============================================================
 # 사이드바 설정
@@ -1394,7 +1692,6 @@ if not options["genres"] or not options["price_groups"] or not options["play_sty
     st.error("필터 옵션을 만들 수 없습니다. evidence_base의 condition_type, condition_value 컬럼을 확인해야 합니다.")
     st.stop()
 
-
 # ============================================================
 # 데이터 로드 정보: 개발자 정보 보기에서만 노출
 # ============================================================
@@ -1417,7 +1714,6 @@ if show_debug_info:
         with col4:
             st.metric("체크리스트 근거", f"{len(evidence_base):,}행")
 
-
 # ============================================================
 # 기본 선택값
 # ============================================================
@@ -1430,7 +1726,6 @@ default_tags = []
 
 if "prelaunch_tag_match_input" not in st.session_state:
     st.session_state["prelaunch_tag_match_input"] = "any"
-
 
 def reset_prelaunch_input_state() -> None:
     """입력 조건과 현재 생성 결과를 초기화합니다.
@@ -1453,12 +1748,18 @@ def reset_prelaunch_input_state() -> None:
     st.session_state.pop("prelaunch_cache_key", None)
     st.session_state["prelaunch_reset_notice"] = True
 
-
 # ============================================================
 # 조건 입력 폼
 # ============================================================
-st.header("1. 게임 속성 선택")
-st.caption("장르, 가격대, Steam 태그, 플레이 방식을 선택한 뒤 **조건 적용** 버튼을 누르면 체크리스트가 바로 생성됩니다.")
+st.markdown(
+    """
+    <div class="prelaunch-panel-title"><span class="small-icon">🎮</span>게임 속성 선택</div>
+    <div class="prelaunch-section-caption">
+        장르, 가격대, Steam 태그, 플레이 방식을 선택한 뒤 <b>조건 적용</b> 버튼을 누르면 체크리스트가 바로 생성됩니다.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.form("prelaunch_condition_form"):
     col1, col2 = st.columns(2)
@@ -1598,7 +1899,6 @@ if "review_count" in matched_games.columns:
 else:
     matched_review_count = 0
 
-
 # ============================================================
 # 데이터 부족 안내
 # ============================================================
@@ -1609,7 +1909,6 @@ if matched_games.empty:
 if selected_evidence.empty:
     st.warning("입력 조건에 맞는 반복 이슈 근거 데이터가 없습니다. 조건을 조금 넓혀서 다시 시도해주세요.")
     st.stop()
-
 
 # ============================================================
 # 프롬프트 / 캐시 키 생성
@@ -1627,7 +1926,6 @@ checklist_prompt = build_checklist_prompt(
 
 cache_key = make_prelaunch_cache_key(user_condition, selected_evidence)
 st.session_state["prelaunch_cache_key"] = cache_key
-
 
 # ============================================================
 # 체크리스트 자동 생성
@@ -1651,10 +1949,9 @@ if should_generate_prelaunch_result:
                 st.success("체크리스트 생성이 완료되었습니다.")
             except Exception as e:
                 st.error("체크리스트 생성 중 오류가 발생했습니다.")
-                st.info("API 키, 모델명, 네트워크 상태를 확인한 뒤 다시 시도해주세요.")
-                if show_debug_info:
-                    with st.expander("상세 오류 확인", expanded=False):
-                        st.exception(e)
+                st.warning(f"오류 타입: {type(e).__name__}")
+                st.code(repr(e), language="text")
+                st.exception(e)
                 st.stop()
 elif cached_result is not None and "prelaunch_llm_result" not in st.session_state:
     st.session_state["prelaunch_llm_result"] = cached_result
@@ -1689,8 +1986,6 @@ if checklist_table_df.empty:
     st.warning("생성 결과에서 출력 가능한 체크리스트 항목을 만들지 못했습니다. 근거 데이터를 확인해야 합니다.")
     st.stop()
 
-
-
 # ============================================================
 # 결과 출력
 # ============================================================
@@ -1707,7 +2002,6 @@ if show_detail_sections:
 else:
     (tab_checklist,) = st.tabs(["📋 체크리스트"])
 
-
 # ------------------------------------------------------------
 # Tab 1. 체크리스트
 # ------------------------------------------------------------
@@ -1721,10 +2015,8 @@ with tab_checklist:
     render_checklist_overview(checklist_table_df, evidence_df=selected_evidence)
 
     st.divider()
-    with st.expander("필터 기준 안내 보기", expanded=False):
-        render_prelaunch_filter_guide()
 
-    st.markdown("#### 점검 카드 필터")
+    st.markdown('<div class="prelaunch-panel-title"><span class="small-icon">🔎</span>점검 카드 필터</div>', unsafe_allow_html=True)
     filter_col1, filter_col2, filter_col3 = st.columns(3)
 
     filtered_checklist = checklist_table_df.copy()
@@ -1791,7 +2083,6 @@ with tab_checklist:
         file_name="prelaunch_checklist.csv",
         mime="text/csv",
     )
-
 
 # ------------------------------------------------------------
 # Tab 2. 근거 보기
@@ -1925,7 +2216,6 @@ if show_detail_sections:
                 file_name="prelaunch_matched_games.csv",
                 mime="text/csv",
             )
-
 
 # ------------------------------------------------------------
 # Tab 3. 검증·참고
