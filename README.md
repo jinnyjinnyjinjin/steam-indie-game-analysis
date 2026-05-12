@@ -105,7 +105,7 @@ game-analysis/
 분석에 사용된 CSV 파일은 아래 Google Drive에서 받을 수 있다.  
 다운로드한 파일은 `data/raw/` 폴더에 위치시킨 뒤 노트북을 실행한다.
 
-**[Google Drive 데이터 다운로드](https://drive.google.com/drive/folders/1sMiOnHPLZMPTG_mYTvXl2kggXEhsBOD9?usp=drive_link)**
+**[Google Drive 데이터 다운로드](https://drive.google.com/drive/folders/1v6ufW8Kks5MOc4QjC_yzFvm2PHy3Z5DG?usp=drive_link)**
 
 ---
 
